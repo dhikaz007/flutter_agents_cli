@@ -441,3 +441,27 @@ agents rule use state default
 ```
 
 `default` means the built-in CLI profile/rule. Active custom rules are copied into `docs/custom-rules/` so coding agents can read project-local, stable rule files. Precedence is: explicit current/project override > selected user custom rule > built-in CLI default/profile.
+
+## Existing project safe adoption
+
+If `agents init` finds an existing `AGENTS.md` or Markdown files under `docs/`, it does not silently overwrite them. Interactive init asks how to continue:
+
+```text
+keep     Preserve existing AGENTS/docs. Safest default.
+import   Preserve existing docs and create an imported-rule index.
+merge    Preserve existing files, create the index, and append a removable bridge to AGENTS.md.
+replace  Back up existing files, then replace overlapping CLI targets.
+cancel   Exit without changing anything.
+```
+
+You can choose non-interactively:
+
+```bash
+agents init --adopt keep
+agents init --adopt merge
+agents init --adopt replace
+```
+
+`replace` creates a backup under `.flutter-agents-backup/<timestamp>/` before destructive replacement. Existing unmanaged files are not registered as CLI-owned, so normal `agents sync` and `agents uninstall` do not delete them.
+
+For most existing projects, start with `keep` or `merge`.

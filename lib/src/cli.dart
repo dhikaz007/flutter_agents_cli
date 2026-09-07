@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:args/args.dart';
 import 'package:path/path.dart' as p;
 
+import 'adoption.dart';
 import 'context_planner.dart';
 import 'detector.dart';
 import 'generator.dart';
@@ -93,6 +94,7 @@ ArgParser _buildParser() {
   parser.addCommand('init')
     ..addOption('preset', help: 'Built-in preset name or path to a preset YAML file.')
     ..addOption('mode', allowed: <String>['existing', 'new'])
+    ..addOption('adopt', allowed: <String>['keep', 'import', 'merge', 'replace', 'cancel'], help: 'How to handle existing AGENTS.md/docs rules.')
     ..addFlag('yes', abbr: 'y', negatable: false, help: 'Accept detected/preset values without prompts.')
     ..addFlag('force', negatable: false, help: 'Overwrite managed/unmanaged target files.')
     ..addFlag('dry-run', negatable: false, help: 'Preview changes without writing.');
@@ -153,7 +155,7 @@ void _usage() {
 Dynamic, project-aware AGENTS rule manager for Flutter.
 
 Core:
-  agents init [--preset NAME|FILE] [--mode existing|new]
+  agents init [--preset NAME|FILE] [--mode existing|new] [--adopt keep|import|merge|replace|cancel]
   agents detect
   agents sync
   agents doctor
@@ -218,6 +220,33 @@ Future<void> _init(Directory root, ArgResults command) async {
     return;
   }
 
+  final adoption = ExistingConfigAdoption();
+  final existing = adoption.inspect(root);
+  String? adoptionPolicy = command['adopt'] as String?;
+  if (existing.found && store.load(root) == null) {
+    stdout.writeln('Existing agent configuration detected:');
+    if (existing.hasAgentsFile) stdout.writeln('  - AGENTS.md');
+    if (existing.ruleDocs.isNotEmpty) {
+      stdout.writeln('  - ${existing.ruleDocs.length} existing Markdown file(s) under docs/');
+    }
+    if (adoptionPolicy == null && command['yes'] != true) {
+      adoptionPolicy = choose(
+        'Existing configuration policy',
+        <String>['keep', 'import', 'merge', 'replace', 'cancel'],
+        detected: 'keep',
+        allowNone: false,
+      );
+    }
+    adoptionPolicy ??= 'keep';
+    if (adoptionPolicy == 'cancel') {
+      stdout.writeln('Initialization cancelled. Existing files were not changed.');
+      return;
+    }
+    if (adoptionPolicy == 'replace' && command['yes'] != true) {
+      if (!confirm('Replace overlapping existing AGENTS/docs files after creating a backup?', defaultYes: false)) return;
+    }
+  }
+
   final detected = ProjectDetector().detect(root);
   StackConfig config = detected.config.copy();
   final presetArg = command['preset'] as String?;
@@ -249,14 +278,49 @@ Future<void> _init(Directory root, ArgResults command) async {
     if (!confirm('\nGenerate adaptive AGENTS rules in ${root.path}?')) return;
   }
 
+  final dryRun = command['dry-run'] == true;
+  final replacingExisting = adoptionPolicy == 'replace';
+  if (!dryRun && existing.found && replacingExisting) {
+    final paths = <String>[
+      if (existing.hasAgentsFile) 'AGENTS.md',
+      ...existing.ruleDocs,
+    ];
+    final backup = adoption.backup(root, paths);
+    stdout.writeln('Backup created: ${p.relative(backup.path, from: root.path)}');
+  }
+
   final report = await RuleGenerator().apply(
     root,
     config,
-    force: command['force'] == true,
-    dryRun: command['dry-run'] == true,
+    force: command['force'] == true || replacingExisting,
+    dryRun: dryRun,
   );
-  _printGenerationReport(report, dryRun: command['dry-run'] == true);
-  if (command['dry-run'] != true) {
+
+  if (!dryRun && existing.found) {
+    switch (adoptionPolicy) {
+      case 'import':
+        adoption.writeImportedIndex(root, existing.ruleDocs);
+        break;
+      case 'merge':
+        adoption.writeImportedIndex(root, existing.ruleDocs);
+        if (existing.hasAgentsFile) adoption.addBridgeToExistingAgents(root);
+        break;
+      case 'keep':
+        stdout.writeln('Existing AGENTS/docs were preserved. CLI-generated files were added only where no unmanaged file blocked them.');
+        break;
+      case 'replace':
+        break;
+    }
+  }
+
+  _printGenerationReport(report, dryRun: dryRun);
+  if (!dryRun) {
+    if (existing.found && adoptionPolicy == 'import') {
+      stdout.writeln('Existing rule docs remain user-owned and are indexed in docs/project/IMPORTED-RULES.md.');
+    }
+    if (existing.found && adoptionPolicy == 'merge' && existing.hasAgentsFile) {
+      stdout.writeln('A removable flutter-agents bridge was appended to the existing AGENTS.md.');
+    }
     stdout.writeln('\nRun `agents doctor` to verify consistency.');
   }
 }
@@ -486,6 +550,9 @@ Future<void> _uninstall(Directory root, ArgResults command) async {
     }
   }
   if (!dryRun) {
+    final adoption = ExistingConfigAdoption();
+    adoption.removeBridgeFromExistingAgents(root);
+    adoption.removeImportedIndex(root);
     store.fileFor(root).deleteSync();
     _removeEmptyDirs(root);
   }

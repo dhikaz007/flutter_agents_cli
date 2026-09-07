@@ -13,9 +13,10 @@ Before editing code, read only:
 2. `docs/PROJECT-STACK.md`
 3. `docs/ARCHITECTURE-ESSENTIAL.md`
 4. `docs/project/PROJECT-RULES.md` when it contains project-specific decisions relevant to the task
-5. the relevant active `docs/custom-rules/<layer>.md` when listed in `PROJECT-STACK.md`
-6. the nearest comparable existing implementation
-7. the user's current requirement and any explicitly referenced project requirement/design/API section
+5. `docs/project/IMPORTED-RULES.md` when present, then only the listed existing rule docs relevant to the task
+6. the relevant active `docs/custom-rules/<layer>.md` when listed in `PROJECT-STACK.md`
+7. the nearest comparable existing implementation
+8. the user's current requirement and any explicitly referenced project requirement/design/API section
 
 Do not reread unchanged binding docs in the same task.
 

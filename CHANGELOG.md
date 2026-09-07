@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.4.0
+
+### Existing project safe adoption
+- `agents init` now detects an existing `AGENTS.md` and Markdown docs before generation.
+- Added `--adopt keep|import|merge|replace|cancel`.
+- Interactive init defaults to the safest `keep` policy.
+- `keep` preserves existing agent files and only creates CLI-managed files where there is no unmanaged collision.
+- `import` keeps existing rule docs user-owned and creates `docs/project/IMPORTED-RULES.md` as a progressive-loading index.
+- `merge` also appends a clearly marked, removable flutter-agents bridge to an existing `AGENTS.md`.
+- `replace` requires confirmation and backs up existing `AGENTS.md`/Markdown docs under `.flutter-agents-backup/<timestamp>/` before replacement.
+- `cancel` exits without changing existing files.
+- `agents uninstall` removes the CLI bridge/import index when generated, while preserving the original existing files.
+- Existing unmanaged files remain outside the manifest and are never removed by normal sync/uninstall.
+
 ## 1.3.0
 
 ### Partial & editable presets

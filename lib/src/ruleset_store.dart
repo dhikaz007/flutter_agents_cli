@@ -118,6 +118,34 @@ class RulesetStore {
         .map((key, value) => MapEntry(key.toString(), value.toString()));
   }
 
+  List<String> validate(String name) {
+    final dir = directory(name);
+    final errors = <String>[];
+    if (!File(p.join(dir.path, 'AGENTS.md')).existsSync())
+      errors.add('AGENTS.md is missing.');
+    for (final profile in profiles(name)) {
+      final root = Directory(p.join(dir.path, 'profiles', profile));
+      for (final required in <String>[
+        'ARCHITECTURE.md',
+        'ROUTING.md',
+        'DEPENDENCY-INJECTION.md',
+        'FOLDER-STRUCTURE.md',
+        'profile.yaml'
+      ]) {
+        if (!File(p.join(root.path, required)).existsSync())
+          errors.add('$profile/$required is missing.');
+      }
+      final profileMetadata = metadata(name, profile);
+      if (profileMetadata['architecture'] == null ||
+          profileMetadata['routing'] == null ||
+          profileMetadata['di'] == null) {
+        errors.add(
+            '$profile/profile.yaml requires architecture, routing, and di.');
+      }
+    }
+    return errors;
+  }
+
   String _safe(String value) =>
       value.trim().toLowerCase().replaceAll(RegExp(r'[^a-z0-9._-]+'), '-');
 }

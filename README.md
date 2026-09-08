@@ -457,7 +457,7 @@ agents init
 agents ruleset use vibe-coding-rules go_router_get_it
 ```
 
-For Flutter Modular projects, choose `flutter_modular` instead. `ruleset use` writes `PROJECT_PROFILE.md` and copies only universal rules plus the selected profile into `docs/dynamic-rules/`. Generated `AGENTS.md` reads that profile just in time. Do not combine profiles in one project.
+For Flutter Modular projects, choose the matching `flutter_modular_v5`, `flutter_modular_v6`, or `flutter_modular_v7` profile. `ruleset use` writes `PROJECT_PROFILE.md` and copies only universal rules plus the selected profile into `docs/dynamic-rules/`. Generated `AGENTS.md` reads that profile just in time. Do not combine profiles in one project.
 
 Presets remain supported. A preset can store `ruleset` and `rulesetProfile` alongside existing stack fields:
 
@@ -484,6 +484,7 @@ agents dependency add
 
 ```bash
 agents ruleset profiles vibe-coding-rules
+agents ruleset validate vibe-coding-rules
 agents ruleset update vibe-coding-rules
 agents ruleset status vibe-coding-rules
 agents ruleset update vibe-coding-rules --apply
@@ -493,7 +494,7 @@ agents sync
 agents doctor --fix
 ```
 
-`update` refreshes the cached Git ruleset; `sync` applies its active profile to the project. `doctor --fix` restores only missing CLI-managed files and preserves user-modified files.
+`validate` checks required documents and required `profile.yaml` metadata. `update` refreshes the cached Git ruleset; `sync` applies its active profile to the project. `doctor --fix` restores only missing CLI-managed files and preserves user-modified files.
 
 ## Profile presets (v1.9)
 

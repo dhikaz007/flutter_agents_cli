@@ -1,5 +1,8 @@
 # Changelog
 
+## 2.0.5
+- Added `agents ruleset validate` to check required profile documents and metadata before use.
+
 ## 2.0.4
 - Added `agents ruleset lock` and `agents ruleset verify` for reproducible ruleset revisions.
 

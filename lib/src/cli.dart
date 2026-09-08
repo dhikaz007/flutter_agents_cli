@@ -192,6 +192,7 @@ ArgParser _buildParser() {
   ruleset.addCommand('status');
   ruleset.addCommand('lock');
   ruleset.addCommand('verify');
+  ruleset.addCommand('validate');
 
   final dependency = parser.addCommand('dependency');
   dependency.addCommand('plan');
@@ -445,6 +446,15 @@ Future<void> _ruleset(Directory root, ArgResults command) async {
         throw StateError(
             'Ruleset revision mismatch: locked $expected, cache $actual.');
       stdout.writeln('Ruleset verified: $name@$actual');
+      return;
+    case 'validate':
+      if (args.length != 1)
+        throw ArgumentError('Usage: agents ruleset validate <name>');
+      final errors = store.validate(args.single);
+      if (errors.isNotEmpty)
+        throw StateError(
+            'Ruleset validation failed:\n${errors.map((e) => '- $e').join('\n')}');
+      stdout.writeln('Ruleset valid: ${args.single}');
       return;
     default:
       throw ArgumentError('Usage: agents ruleset <add|list|use>');

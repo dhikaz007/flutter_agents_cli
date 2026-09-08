@@ -13,6 +13,7 @@ import 'preset_io.dart';
 import 'prompts.dart';
 import 'registry.dart';
 import 'rule_store.dart';
+import 'ruleset_store.dart';
 
 Future<void> runAgents(List<String> arguments) async {
   final parser = _buildParser();
@@ -77,6 +78,9 @@ Future<void> runAgents(List<String> arguments) async {
       case 'rule':
         await _rule(root, command);
         return;
+      case 'ruleset':
+        await _ruleset(root, command);
+        return;
       case 'version':
         stdout.writeln('flutter-agents $cliVersion');
         return;
@@ -92,12 +96,32 @@ ArgParser _buildParser() {
   final parser = ArgParser()..addFlag('help', abbr: 'h', negatable: false);
 
   parser.addCommand('init')
-    ..addOption('preset', help: 'Built-in preset name or path to a preset YAML file.')
+    ..addOption(
+      'preset',
+      help: 'Built-in preset name or path to a preset YAML file.',
+    )
     ..addOption('mode', allowed: <String>['existing', 'new'])
-    ..addOption('adopt', allowed: <String>['keep', 'import', 'merge', 'replace', 'cancel'], help: 'How to handle existing AGENTS.md/docs rules.')
-    ..addFlag('yes', abbr: 'y', negatable: false, help: 'Accept detected/preset values without prompts.')
-    ..addFlag('force', negatable: false, help: 'Overwrite managed/unmanaged target files.')
-    ..addFlag('dry-run', negatable: false, help: 'Preview changes without writing.');
+    ..addOption(
+      'adopt',
+      allowed: <String>['keep', 'import', 'merge', 'replace', 'cancel'],
+      help: 'How to handle existing AGENTS.md/docs rules.',
+    )
+    ..addFlag(
+      'yes',
+      abbr: 'y',
+      negatable: false,
+      help: 'Accept detected/preset values without prompts.',
+    )
+    ..addFlag(
+      'force',
+      negatable: false,
+      help: 'Overwrite managed/unmanaged target files.',
+    )
+    ..addFlag(
+      'dry-run',
+      negatable: false,
+      help: 'Preview changes without writing.',
+    );
 
   parser.addCommand('sync')
     ..addFlag('yes', abbr: 'y', negatable: false)
@@ -110,7 +134,11 @@ ArgParser _buildParser() {
 
   parser.addCommand('uninstall')
     ..addFlag('yes', abbr: 'y', negatable: false)
-    ..addFlag('force', negatable: false, help: 'Also delete modified CLI-managed files.')
+    ..addFlag(
+      'force',
+      negatable: false,
+      help: 'Also delete modified CLI-managed files.',
+    )
     ..addFlag('dry-run', negatable: false);
 
   parser.addCommand('add');
@@ -144,6 +172,11 @@ ArgParser _buildParser() {
   rule.addCommand('default');
   rule.addCommand('use');
   rule.addCommand('show');
+
+  final ruleset = parser.addCommand('ruleset');
+  ruleset.addCommand('list');
+  ruleset.addCommand('add');
+  ruleset.addCommand('use');
 
   parser.addCommand('version');
   return parser;
@@ -198,6 +231,11 @@ Custom rules:
   agents rule use <layer> <name|default>
   agents rule show <layer> [name]
 
+Dynamic rulesets:
+  agents ruleset add <name> <git-url-or-local-path>
+  agents ruleset list
+  agents ruleset use <name> <profile>
+
 Other:
   agents version
 
@@ -208,6 +246,39 @@ Profile kinds:
 Use `agents context` to preview the minimum rule context for a coding task.''');
 }
 
+Future<void> _ruleset(Directory root, ArgResults command) async {
+  final sub = command.command;
+  final args = sub?.rest ?? <String>[];
+  final store = RulesetStore();
+  switch (sub?.name) {
+    case 'list':
+      for (final name in store.list()) stdout.writeln(name);
+      return;
+    case 'add':
+      if (args.length != 2)
+        throw ArgumentError(
+          'Usage: agents ruleset add <name> <git-url-or-local-path>',
+        );
+      await store.add(args[0], args[1]);
+      stdout.writeln('Ruleset added: ${args[0]}');
+      return;
+    case 'use':
+      if (args.length != 2)
+        throw ArgumentError('Usage: agents ruleset use <name> <profile>');
+      final manifest = ManifestStore().load(root);
+      if (manifest == null) throw StateError('Run `agents init` first.');
+      store.resolve(args[0], args[1]);
+      final config = manifest.config.copy()
+        ..ruleset = args[0]
+        ..rulesetProfile = args[1];
+      final report = await RuleGenerator().apply(root, config);
+      _printGenerationReport(report);
+      return;
+    default:
+      throw ArgumentError('Usage: agents ruleset <add|list|use>');
+  }
+}
+
 void _detect(Directory root) {
   final result = ProjectDetector().detect(root);
   _printDetection(result);
@@ -216,7 +287,9 @@ void _detect(Directory root) {
 Future<void> _init(Directory root, ArgResults command) async {
   final store = ManifestStore();
   if (store.load(root) != null && command['force'] != true) {
-    stdout.writeln('flutter-agents is already initialized here. Use `agents sync` or `agents init --force`.');
+    stdout.writeln(
+      'flutter-agents is already initialized here. Use `agents sync` or `agents init --force`.',
+    );
     return;
   }
 
@@ -227,7 +300,9 @@ Future<void> _init(Directory root, ArgResults command) async {
     stdout.writeln('Existing agent configuration detected:');
     if (existing.hasAgentsFile) stdout.writeln('  - AGENTS.md');
     if (existing.ruleDocs.isNotEmpty) {
-      stdout.writeln('  - ${existing.ruleDocs.length} existing Markdown file(s) under docs/');
+      stdout.writeln(
+        '  - ${existing.ruleDocs.length} existing Markdown file(s) under docs/',
+      );
     }
     if (adoptionPolicy == null && command['yes'] != true) {
       adoptionPolicy = choose(
@@ -239,11 +314,17 @@ Future<void> _init(Directory root, ArgResults command) async {
     }
     adoptionPolicy ??= 'keep';
     if (adoptionPolicy == 'cancel') {
-      stdout.writeln('Initialization cancelled. Existing files were not changed.');
+      stdout.writeln(
+        'Initialization cancelled. Existing files were not changed.',
+      );
       return;
     }
     if (adoptionPolicy == 'replace' && command['yes'] != true) {
-      if (!confirm('Replace overlapping existing AGENTS/docs files after creating a backup?', defaultYes: false)) return;
+      if (!confirm(
+        'Replace overlapping existing AGENTS/docs files after creating a backup?',
+        defaultYes: false,
+      ))
+        return;
     }
   }
 
@@ -258,9 +339,13 @@ Future<void> _init(Directory root, ArgResults command) async {
       return;
     }
     config = preset.mergeInto(config);
-    stdout.writeln('Using ${preset.isPartial ? 'partial ' : ''}preset: $presetArg');
+    stdout.writeln(
+      'Using ${preset.isPartial ? 'partial ' : ''}preset: $presetArg',
+    );
     if (preset.isPartial) {
-      stdout.writeln('Unset preset fields keep detected/project values and can be confirmed interactively.');
+      stdout.writeln(
+        'Unset preset fields keep detected/project values and can be confirmed interactively.',
+      );
     }
   }
 
@@ -268,7 +353,8 @@ Future<void> _init(Directory root, ArgResults command) async {
   if (modeArg != null) config.mode = modeArg;
   final globalDefaults = UserRuleStore().readDefaults();
   for (final entry in globalDefaults.entries) {
-    if (UserRuleStore().resolve(entry.key, entry.value) != null) config.rules.putIfAbsent(entry.key, () => entry.value);
+    if (UserRuleStore().resolve(entry.key, entry.value) != null)
+      config.rules.putIfAbsent(entry.key, () => entry.value);
   }
 
   _printDetection(detected);
@@ -286,7 +372,9 @@ Future<void> _init(Directory root, ArgResults command) async {
       ...existing.ruleDocs,
     ];
     final backup = adoption.backup(root, paths);
-    stdout.writeln('Backup created: ${p.relative(backup.path, from: root.path)}');
+    stdout.writeln(
+      'Backup created: ${p.relative(backup.path, from: root.path)}',
+    );
   }
 
   final report = await RuleGenerator().apply(
@@ -306,7 +394,9 @@ Future<void> _init(Directory root, ArgResults command) async {
         if (existing.hasAgentsFile) adoption.addBridgeToExistingAgents(root);
         break;
       case 'keep':
-        stdout.writeln('Existing AGENTS/docs were preserved. CLI-generated files were added only where no unmanaged file blocked them.');
+        stdout.writeln(
+          'Existing AGENTS/docs were preserved. CLI-generated files were added only where no unmanaged file blocked them.',
+        );
         break;
       case 'replace':
         break;
@@ -316,10 +406,14 @@ Future<void> _init(Directory root, ArgResults command) async {
   _printGenerationReport(report, dryRun: dryRun);
   if (!dryRun) {
     if (existing.found && adoptionPolicy == 'import') {
-      stdout.writeln('Existing rule docs remain user-owned and are indexed in docs/project/IMPORTED-RULES.md.');
+      stdout.writeln(
+        'Existing rule docs remain user-owned and are indexed in docs/project/IMPORTED-RULES.md.',
+      );
     }
     if (existing.found && adoptionPolicy == 'merge' && existing.hasAgentsFile) {
-      stdout.writeln('A removable flutter-agents bridge was appended to the existing AGENTS.md.');
+      stdout.writeln(
+        'A removable flutter-agents bridge was appended to the existing AGENTS.md.',
+      );
     }
     stdout.writeln('\nRun `agents doctor` to verify consistency.');
   }
@@ -333,18 +427,66 @@ StackConfig _configure(StackConfig c) {
     allowNone: false,
   );
   _applyArchitectureDefaults(c);
-  c.state = choose('State management', ProfileRegistry.values('state'), detected: c.state);
-  c.routing = choose('Routing', ProfileRegistry.values('routing'), detected: c.routing);
-  c.di = choose('Dependency injection', ProfileRegistry.values('di'), detected: c.di);
-  c.network = choose('Network', ProfileRegistry.values('network'), detected: c.network);
-  c.storage = choose('Storage/database', ProfileRegistry.values('storage'), detected: c.storage);
-  c.localization = choose('Localization', ProfileRegistry.values('localization'), detected: c.localization);
-  c.assets = choose('Asset generation', ProfileRegistry.values('assets'), detected: c.assets);
-  c.modelCodegen = choose('Model codegen', ProfileRegistry.values('codegen'), detected: c.modelCodegen);
-  c.blockingLoader = choose('Blocking loader', ProfileRegistry.values('loading-blocking'), detected: c.blockingLoader);
-  c.listLoader = choose('List loader', ProfileRegistry.values('loading-list'), detected: c.listLoader);
-  c.inlineLoader = choose('Inline loader', ProfileRegistry.values('loading-inline'), detected: c.inlineLoader);
-  c.pagination = choose('Pagination', ProfileRegistry.values('pagination'), detected: c.pagination);
+  c.state = choose(
+    'State management',
+    ProfileRegistry.values('state'),
+    detected: c.state,
+  );
+  c.routing = choose(
+    'Routing',
+    ProfileRegistry.values('routing'),
+    detected: c.routing,
+  );
+  c.di = choose(
+    'Dependency injection',
+    ProfileRegistry.values('di'),
+    detected: c.di,
+  );
+  c.network = choose(
+    'Network',
+    ProfileRegistry.values('network'),
+    detected: c.network,
+  );
+  c.storage = choose(
+    'Storage/database',
+    ProfileRegistry.values('storage'),
+    detected: c.storage,
+  );
+  c.localization = choose(
+    'Localization',
+    ProfileRegistry.values('localization'),
+    detected: c.localization,
+  );
+  c.assets = choose(
+    'Asset generation',
+    ProfileRegistry.values('assets'),
+    detected: c.assets,
+  );
+  c.modelCodegen = choose(
+    'Model codegen',
+    ProfileRegistry.values('codegen'),
+    detected: c.modelCodegen,
+  );
+  c.blockingLoader = choose(
+    'Blocking loader',
+    ProfileRegistry.values('loading-blocking'),
+    detected: c.blockingLoader,
+  );
+  c.listLoader = choose(
+    'List loader',
+    ProfileRegistry.values('loading-list'),
+    detected: c.listLoader,
+  );
+  c.inlineLoader = choose(
+    'Inline loader',
+    ProfileRegistry.values('loading-inline'),
+    detected: c.inlineLoader,
+  );
+  c.pagination = choose(
+    'Pagination',
+    ProfileRegistry.values('pagination'),
+    detected: c.pagination,
+  );
   return c;
 }
 
@@ -387,7 +529,8 @@ Future<void> _sync(Directory root, ArgResults command) async {
   } else {
     config = detected.config.copy();
     config.mode = manifest.config.mode;
-    if (config.architecture == 'custom_existing' && manifest.config.architecture != null) {
+    if (config.architecture == 'custom_existing' &&
+        manifest.config.architecture != null) {
       config.architecture = manifest.config.architecture;
       config.featureRoot = manifest.config.featureRoot;
       config.sharedRoot = manifest.config.sharedRoot;
@@ -449,22 +592,33 @@ Future<void> _doctor(Directory root) async {
     final kind = parts.first;
     final value = parts.sublist(1).join(':');
     final packageRuleKind = _configKindForProfile(kind, value);
-    final packageExpression = ProfileRegistry.packageFor(packageRuleKind, value);
+    final packageExpression = ProfileRegistry.packageFor(
+      packageRuleKind,
+      value,
+    );
     if (manifest.config.mode == 'existing' && packageExpression != null) {
       final candidates = packageExpression.split('|');
       if (!candidates.any(detection.dependencies.contains)) {
-        stdout.writeln('! $packageRuleKind=$value is documented but package not detected in pubspec.yaml');
+        stdout.writeln(
+          '! $packageRuleKind=$value is documented but package not detected in pubspec.yaml',
+        );
         warnings++;
       }
     }
-    final profile = File(p.join(root.path, ProfileRegistry.profilePath(packageRuleKind, value)));
+    final profile = File(
+      p.join(root.path, ProfileRegistry.profilePath(packageRuleKind, value)),
+    );
     if (!profile.existsSync()) {
-      stdout.writeln('✗ active profile missing: ${p.relative(profile.path, from: root.path)}');
+      stdout.writeln(
+        '✗ active profile missing: ${p.relative(profile.path, from: root.path)}',
+      );
       errors++;
     }
   }
 
-  final projectRules = File(p.join(root.path, 'docs', 'project', 'PROJECT-RULES.md'));
+  final projectRules = File(
+    p.join(root.path, 'docs', 'project', 'PROJECT-RULES.md'),
+  );
   if (projectRules.existsSync()) {
     stdout.writeln('✓ user-owned project rules preserved');
   }
@@ -515,12 +669,19 @@ Loading
 Custom rules
   ${c.rules.isEmpty ? 'CLI defaults' : c.rules.entries.map((e) => '${e.key}=${e.value}').join(', ')}
 
+Dynamic ruleset
+  ${c.ruleset == null ? 'none' : '${c.ruleset} (${c.rulesetProfile})'}
+
 Managed files
   ${manifest.files.length} file(s)''');
 
   final store = ManifestStore();
-  final modified = manifest.files.values.where((record) => store.stateOf(root, record) == ManagedState.modified).length;
-  final missing = manifest.files.values.where((record) => store.stateOf(root, record) == ManagedState.missing).length;
+  final modified = manifest.files.values
+      .where((record) => store.stateOf(root, record) == ManagedState.modified)
+      .length;
+  final missing = manifest.files.values
+      .where((record) => store.stateOf(root, record) == ManagedState.missing)
+      .length;
   stdout.writeln('  Modified      $modified');
   stdout.writeln('  Missing       $missing');
 }
@@ -534,7 +695,9 @@ Future<void> _uninstall(Directory root, ArgResults command) async {
   }
   final force = command['force'] == true;
   final dryRun = command['dry-run'] == true;
-  if (command['yes'] != true && !confirm('Remove flutter-agents managed files?', defaultYes: false)) return;
+  if (command['yes'] != true &&
+      !confirm('Remove flutter-agents managed files?', defaultYes: false))
+    return;
 
   final removed = <String>[];
   final preserved = <String>[];
@@ -565,8 +728,12 @@ Future<void> _uninstall(Directory root, ArgResults command) async {
 void _removeEmptyDirs(Directory root) {
   final docs = Directory(p.join(root.path, 'docs'));
   if (!docs.existsSync()) return;
-  final dirs = docs.listSync(recursive: true, followLinks: false).whereType<Directory>().toList()
-    ..sort((a, b) => b.path.length.compareTo(a.path.length));
+  final dirs =
+      docs
+          .listSync(recursive: true, followLinks: false)
+          .whereType<Directory>()
+          .toList()
+        ..sort((a, b) => b.path.length.compareTo(a.path.length));
   for (final dir in dirs) {
     if (dir.existsSync() && dir.listSync().isEmpty) dir.deleteSync();
   }
@@ -652,7 +819,9 @@ void _preset(Directory root, ArgResults command) {
     if (user != null) {
       final file = io.userFile(name);
       stdout.writeln(file.readAsStringSync());
-      stdout.writeln('Type: ${user.isPartial ? 'partial' : 'full'} user preset');
+      stdout.writeln(
+        'Type: ${user.isPartial ? 'partial' : 'full'} user preset',
+      );
       return;
     }
     final document = io.resolveDocument(name);
@@ -669,9 +838,13 @@ void _preset(Directory root, ArgResults command) {
   if (sub.name == 'create') {
     stdout.writeln('Create a partial or full reusable user preset.');
     stdout.writeln('Skip anything you do not want this preset to control.');
-    stdout.write('Preset name${sub.rest.isNotEmpty ? ' [${sub.rest.first}]' : ''}: ');
+    stdout.write(
+      'Preset name${sub.rest.isNotEmpty ? ' [${sub.rest.first}]' : ''}: ',
+    );
     final typedName = stdin.readLineSync()?.trim() ?? '';
-    final name = typedName.isNotEmpty ? typedName : (sub.rest.isNotEmpty ? sub.rest.first : '');
+    final name = typedName.isNotEmpty
+        ? typedName
+        : (sub.rest.isNotEmpty ? sub.rest.first : '');
     if (name.isEmpty) {
       stderr.writeln('Preset name is required.');
       exitCode = 64;
@@ -693,17 +866,24 @@ void _preset(Directory root, ArgResults command) {
     }
 
     for (final kind in ProfileRegistry.options.keys) {
-      if (!confirm('Configure profile "$kind" now?', defaultYes: false)) continue;
+      if (!confirm('Configure profile "$kind" now?', defaultYes: false))
+        continue;
       final selected = choose('Profile: $kind', ProfileRegistry.values(kind));
       _setPresetKind(document, kind, selected);
     }
     _editPresetRules(document, onlyAsk: true);
 
     final target = io.userFile(name);
-    if (target.existsSync() && !confirm('Preset already exists. Overwrite?', defaultYes: false)) return;
+    if (target.existsSync() &&
+        !confirm('Preset already exists. Overwrite?', defaultYes: false))
+      return;
     io.saveUserDocument(name, document, overwrite: target.existsSync());
-    stdout.writeln('Saved ${document.isPartial ? 'partial' : 'full'} user preset: ${target.path}');
-    stdout.writeln('You can continue later with: agents preset edit ${p.basenameWithoutExtension(target.path)}');
+    stdout.writeln(
+      'Saved ${document.isPartial ? 'partial' : 'full'} user preset: ${target.path}',
+    );
+    stdout.writeln(
+      'You can continue later with: agents preset edit ${p.basenameWithoutExtension(target.path)}',
+    );
     return;
   }
 
@@ -721,7 +901,9 @@ void _preset(Directory root, ArgResults command) {
       return;
     }
     stdout.writeln('Editing preset: $name');
-    stdout.writeln('Only fields you choose to edit will change. Missing fields stay missing.');
+    stdout.writeln(
+      'Only fields you choose to edit will change. Missing fields stay missing.',
+    );
     if (confirm('Edit description?', defaultYes: false)) {
       stdout.write('Description [${document.description ?? ''}]: ');
       final value = stdin.readLineSync()?.trim() ?? '';
@@ -749,7 +931,9 @@ void _preset(Directory root, ArgResults command) {
   if (sub.name == 'set') {
     if (sub.rest.length < 2) {
       stderr.writeln('Usage: agents preset set <name> <kind> [value]');
-      stderr.writeln('   or: agents preset set <name> rule <layer> [rule-name]');
+      stderr.writeln(
+        '   or: agents preset set <name> rule <layer> [rule-name]',
+      );
       exitCode = 64;
       return;
     }
@@ -762,7 +946,9 @@ void _preset(Directory root, ArgResults command) {
     }
     if (sub.rest[1] == 'rule') {
       if (sub.rest.length < 3) {
-        stderr.writeln('Usage: agents preset set <name> rule <layer> [rule-name]');
+        stderr.writeln(
+          'Usage: agents preset set <name> rule <layer> [rule-name]',
+        );
         exitCode = 64;
         return;
       }
@@ -771,7 +957,12 @@ void _preset(Directory root, ArgResults command) {
       final options = <String>['default', ...store.list(layer)];
       String? selected = sub.rest.length >= 4 ? sub.rest[3] : null;
       if (selected == null) {
-        selected = choose('Rule: $layer', options, detected: document.config.rules[layer] ?? 'default', allowNone: false);
+        selected = choose(
+          'Rule: $layer',
+          options,
+          detected: document.config.rules[layer] ?? 'default',
+          allowNone: false,
+        );
       }
       if (selected == null || !options.contains(selected)) {
         stderr.writeln('Unknown rule for $layer: ${selected ?? '(none)'}');
@@ -794,7 +985,9 @@ void _preset(Directory root, ArgResults command) {
         selected = raw == 'none' ? null : raw;
         if (selected != null && !ProfileRegistry.supports(kind, selected)) {
           stderr.writeln('Unsupported profile: $kind/$selected');
-          stderr.writeln('Available: ${ProfileRegistry.values(kind).join(', ')}, none');
+          stderr.writeln(
+            'Available: ${ProfileRegistry.values(kind).join(', ')}, none',
+          );
           exitCode = 64;
           return;
         }
@@ -857,7 +1050,9 @@ void _preset(Directory root, ArgResults command) {
     }
     final manifest = ManifestStore().load(root);
     if (manifest == null) {
-      stderr.writeln('Run `agents init` first, then save the active project config as a preset.');
+      stderr.writeln(
+        'Run `agents init` first, then save the active project config as a preset.',
+      );
       exitCode = 1;
       return;
     }
@@ -886,7 +1081,9 @@ void _preset(Directory root, ArgResults command) {
       exitCode = 1;
       return;
     }
-    if (sub['yes'] != true && !confirm('Delete user preset "$name"?', defaultYes: false)) return;
+    if (sub['yes'] != true &&
+        !confirm('Delete user preset "$name"?', defaultYes: false))
+      return;
     io.deleteUser(name);
     stdout.writeln('Deleted user preset: $name');
     return;
@@ -904,7 +1101,11 @@ void _preset(Directory root, ArgResults command) {
       exitCode = 1;
       return;
     }
-    final file = File(p.isAbsolute(sub.rest.first) ? sub.rest.first : p.join(root.path, sub.rest.first));
+    final file = File(
+      p.isAbsolute(sub.rest.first)
+          ? sub.rest.first
+          : p.join(root.path, sub.rest.first),
+    );
     io.export(manifest.config, file);
     stdout.writeln('Exported full project preset: ${file.path}');
   }
@@ -972,13 +1173,16 @@ void _editPresetRules(PresetDocument document, {required bool onlyAsk}) {
     ...store.layers(),
     ...store.readDefaults().keys,
     ...document.ruleLayers,
-  }.toList()
-    ..sort();
+  }.toList()..sort();
   for (final layer in layers) {
-    if (onlyAsk && !confirm('Configure rule "$layer" now?', defaultYes: false)) continue;
+    if (onlyAsk && !confirm('Configure rule "$layer" now?', defaultYes: false))
+      continue;
     final options = <String>['default', ...store.list(layer)];
-    final current = document.config.rules[layer] ?? store.defaultFor(layer) ?? 'default';
-    final selected = choose('Rule: $layer', options, detected: current, allowNone: false) ?? 'default';
+    final current =
+        document.config.rules[layer] ?? store.defaultFor(layer) ?? 'default';
+    final selected =
+        choose('Rule: $layer', options, detected: current, allowNone: false) ??
+        'default';
     document.config.rules[layer] = selected;
     document.ruleLayers.add(layer);
   }
@@ -1002,15 +1206,20 @@ void _explain(Directory root, ArgResults command) {
   stdout.writeln('Concern: $concern');
   if (value == null) {
     stdout.writeln('Active profile: none');
-    stdout.writeln('Behavior: inspect existing code and universal rules; do not invent a package choice.');
+    stdout.writeln(
+      'Behavior: inspect existing code and universal rules; do not invent a package choice.',
+    );
     return;
   }
   stdout.writeln('Active profile: $value');
   stdout.writeln('Rule file: ${ProfileRegistry.profilePath(concern, value)}');
   final packageExpression = ProfileRegistry.packageFor(concern, value);
-  if (packageExpression != null) stdout.writeln('Expected package: $packageExpression');
+  if (packageExpression != null)
+    stdout.writeln('Expected package: $packageExpression');
   if (concern == 'state' && value == 'flutter_bloc') {
-    stdout.writeln('Key policy: business state in Cubit/Bloc; one-time UI side effects in BlocListener/BlocConsumer.listener.');
+    stdout.writeln(
+      'Key policy: business state in Cubit/Bloc; one-time UI side effects in BlocListener/BlocConsumer.listener.',
+    );
   }
   if (concern.startsWith('loading')) {
     stdout.writeln('Loading role: ${concern.replaceFirst('loading-', '')}.');
@@ -1035,8 +1244,12 @@ void _context(Directory root, ArgResults command) {
   stdout.writeln('Concerns: ${plan.concerns.join(', ')}');
   stdout.writeln('\nRecommended context:');
   for (final file in plan.files) stdout.writeln('  $file');
-  stdout.writeln('\nEstimated rule context: ~${plan.estimatedTokens} tokens (rough character-based estimate)');
-  stdout.writeln('Also inspect the nearest comparable implementation for the task.');
+  stdout.writeln(
+    '\nEstimated rule context: ~${plan.estimatedTokens} tokens (rough character-based estimate)',
+  );
+  stdout.writeln(
+    'Also inspect the nearest comparable implementation for the task.',
+  );
   for (final warning in plan.warnings) stdout.writeln('! $warning');
 }
 
@@ -1054,7 +1267,8 @@ void _learn(Directory root, ArgResults command) {
   if (components.isEmpty) {
     lines.add('- none confidently detected');
   } else {
-    for (final entry in components.entries) lines.add('- ${entry.key}: ${entry.value}');
+    for (final entry in components.entries)
+      lines.add('- ${entry.key}: ${entry.value}');
   }
   lines.addAll(<String>['', '## Convention signals']);
   for (final entry in signals.entries.where((entry) => entry.value > 0)) {
@@ -1068,10 +1282,14 @@ void _learn(Directory root, ArgResults command) {
 
   stdout.writeln(lines.join('\n'));
   if (command['write'] == true) {
-    final file = File(p.join(root.path, 'docs', 'project', 'LEARNED-CONVENTIONS.md'));
+    final file = File(
+      p.join(root.path, 'docs', 'project', 'LEARNED-CONVENTIONS.md'),
+    );
     file.parent.createSync(recursive: true);
     file.writeAsStringSync('${lines.join('\n')}\n');
-    stdout.writeln('\nWrote user-owned proposal: ${p.relative(file.path, from: root.path)}');
+    stdout.writeln(
+      '\nWrote user-owned proposal: ${p.relative(file.path, from: root.path)}',
+    );
   }
 }
 
@@ -1087,7 +1305,9 @@ Future<void> _structure(Directory root, ArgResults command) async {
     stdout.writeln('Architecture : ${manifest.config.architecture ?? '-'}');
     stdout.writeln('Feature root : ${manifest.config.featureRoot ?? '-'}');
     stdout.writeln('Shared root  : ${manifest.config.sharedRoot ?? '-'}');
-    stdout.writeln('This command reports policy only; it does not migrate source folders.');
+    stdout.writeln(
+      'This command reports policy only; it does not migrate source folders.',
+    );
     return;
   }
   if (sub.name == 'set') {
@@ -1107,14 +1327,21 @@ Future<void> _structure(Directory root, ArgResults command) async {
       ..featureRoot = null
       ..sharedRoot = null;
     _applyArchitectureDefaults(c);
-    if (sub['yes'] != true && !confirm('Change architecture policy to $profile? This will NOT move source files.', defaultYes: false)) {
+    if (sub['yes'] != true &&
+        !confirm(
+          'Change architecture policy to $profile? This will NOT move source files.',
+          defaultYes: false,
+        )) {
       return;
     }
-    final report = await RuleGenerator().apply(root, c, force: sub['force'] == true);
+    final report = await RuleGenerator().apply(
+      root,
+      c,
+      force: sub['force'] == true,
+    );
     _printGenerationReport(report);
   }
 }
-
 
 Future<void> _rule(Directory root, ArgResults command) async {
   final sub = command.command;
@@ -1123,7 +1350,10 @@ Future<void> _rule(Directory root, ArgResults command) async {
     final filter = sub?.rest.isNotEmpty == true ? sub!.rest.first : null;
     final defaults = store.readDefaults();
     final layers = filter == null ? store.layers() : <String>[filter];
-    if (layers.isEmpty) { stdout.writeln('No custom rules installed.'); return; }
+    if (layers.isEmpty) {
+      stdout.writeln('No custom rules installed.');
+      return;
+    }
     for (final layer in layers) {
       stdout.writeln('$layer:');
       for (final name in store.list(layer)) {
@@ -1134,49 +1364,100 @@ Future<void> _rule(Directory root, ArgResults command) async {
     return;
   }
   if (sub.name == 'add') {
-    if (sub.rest.length < 2) { stderr.writeln('Usage: agents rule add <layer> <file.md> [name]'); exitCode = 64; return; }
+    if (sub.rest.length < 2) {
+      stderr.writeln('Usage: agents rule add <layer> <file.md> [name]');
+      exitCode = 64;
+      return;
+    }
     final source = File(sub.rest[1]);
-    final name = store.add(sub.rest[0], source, name: sub.rest.length > 2 ? sub.rest[2] : null);
+    final name = store.add(
+      sub.rest[0],
+      source,
+      name: sub.rest.length > 2 ? sub.rest[2] : null,
+    );
     stdout.writeln('Added user rule: ${sub.rest[0]}/$name');
     return;
   }
   if (sub.name == 'remove') {
-    if (sub.rest.length < 2) { stderr.writeln('Usage: agents rule remove <layer> <name>'); exitCode = 64; return; }
+    if (sub.rest.length < 2) {
+      stderr.writeln('Usage: agents rule remove <layer> <name>');
+      exitCode = 64;
+      return;
+    }
     store.remove(sub.rest[0], sub.rest[1]);
     stdout.writeln('Removed user rule: ${sub.rest[0]}/${sub.rest[1]}');
     return;
   }
   if (sub.name == 'default') {
-    if (sub.rest.length < 2) { stderr.writeln('Usage: agents rule default <layer> <name|default>'); exitCode = 64; return; }
-    store.setDefault(sub.rest[0], sub.rest[1] == 'default' ? null : sub.rest[1]);
-    stdout.writeln(sub.rest[1] == 'default' ? 'Global custom default cleared for ${sub.rest[0]}.' : 'Global default for ${sub.rest[0]}: ${sub.rest[1]}');
+    if (sub.rest.length < 2) {
+      stderr.writeln('Usage: agents rule default <layer> <name|default>');
+      exitCode = 64;
+      return;
+    }
+    store.setDefault(
+      sub.rest[0],
+      sub.rest[1] == 'default' ? null : sub.rest[1],
+    );
+    stdout.writeln(
+      sub.rest[1] == 'default'
+          ? 'Global custom default cleared for ${sub.rest[0]}.'
+          : 'Global default for ${sub.rest[0]}: ${sub.rest[1]}',
+    );
     return;
   }
   if (sub.name == 'show') {
-    if (sub.rest.isEmpty) { stderr.writeln('Usage: agents rule show <layer> [name]'); exitCode = 64; return; }
+    if (sub.rest.isEmpty) {
+      stderr.writeln('Usage: agents rule show <layer> [name]');
+      exitCode = 64;
+      return;
+    }
     final layer = sub.rest[0];
     final name = sub.rest.length > 1 ? sub.rest[1] : store.defaultFor(layer);
-    if (name == null) { stdout.writeln('$layer uses CLI default rule.'); return; }
+    if (name == null) {
+      stdout.writeln('$layer uses CLI default rule.');
+      return;
+    }
     final file = store.resolve(layer, name);
-    if (file == null) { stderr.writeln('Rule not found: $layer/$name'); exitCode = 1; return; }
+    if (file == null) {
+      stderr.writeln('Rule not found: $layer/$name');
+      exitCode = 1;
+      return;
+    }
     stdout.write(file.readAsStringSync());
     return;
   }
   if (sub.name == 'use') {
-    if (sub.rest.length < 2) { stderr.writeln('Usage: agents rule use <layer> <name|default>'); exitCode = 64; return; }
+    if (sub.rest.length < 2) {
+      stderr.writeln('Usage: agents rule use <layer> <name|default>');
+      exitCode = 64;
+      return;
+    }
     final manifest = ManifestStore().load(root);
-    if (manifest == null) { stderr.writeln('Run `agents init` first.'); exitCode = 1; return; }
-    final layer = sub.rest[0]; final name = sub.rest[1];
+    if (manifest == null) {
+      stderr.writeln('Run `agents init` first.');
+      exitCode = 1;
+      return;
+    }
+    final layer = sub.rest[0];
+    final name = sub.rest[1];
     final c = manifest.config.copy();
     if (name == 'default') {
       c.rules[layer] = 'default';
     } else {
-      if (store.resolve(layer, name) == null) { stderr.writeln('Rule not found: $layer/$name'); exitCode = 64; return; }
+      if (store.resolve(layer, name) == null) {
+        stderr.writeln('Rule not found: $layer/$name');
+        exitCode = 64;
+        return;
+      }
       c.rules[layer] = name;
     }
     final report = await RuleGenerator().apply(root, c);
     _printGenerationReport(report);
-    stdout.writeln(name == 'default' ? '$layer now uses CLI default.' : '$layer now uses custom rule: $name');
+    stdout.writeln(
+      name == 'default'
+          ? '$layer now uses CLI default.'
+          : '$layer now uses custom rule: $name',
+    );
     return;
   }
 }
@@ -1194,9 +1475,14 @@ void _printDetection(DetectionResult result) {
   stdout.writeln('Assets: ${c.assets ?? '-'}');
   stdout.writeln('Model codegen: ${c.modelCodegen ?? '-'}');
   stdout.writeln('Pagination: ${c.pagination ?? '-'}');
-  final loading = <String?>[c.blockingLoader, c.listLoader, c.inlineLoader].whereType<String>().join(', ');
+  final loading = <String?>[
+    c.blockingLoader,
+    c.listLoader,
+    c.inlineLoader,
+  ].whereType<String>().join(', ');
   stdout.writeln('Loading: ${loading.isEmpty ? '-' : loading}');
-  if (c.uiComponents.isNotEmpty) stdout.writeln('UI components: ${c.uiComponents}');
+  if (c.uiComponents.isNotEmpty)
+    stdout.writeln('UI components: ${c.uiComponents}');
   for (final note in result.notes) stdout.writeln('i $note');
 }
 
@@ -1211,7 +1497,9 @@ void _printConfig(StackConfig c) {
   stdout.writeln('Localization: ${c.localization}');
   stdout.writeln('Assets: ${c.assets}');
   stdout.writeln('Codegen: ${c.modelCodegen} + ${c.jsonCodegen}');
-  stdout.writeln('Loading: ${c.blockingLoader}, ${c.listLoader}, ${c.inlineLoader}');
+  stdout.writeln(
+    'Loading: ${c.blockingLoader}, ${c.listLoader}, ${c.inlineLoader}',
+  );
   stdout.writeln('Pagination: ${c.pagination}');
   if (c.rules.isNotEmpty) stdout.writeln('Rules: ${c.rules}');
 }
@@ -1221,9 +1509,12 @@ void _printGenerationReport(GenerationReport report, {bool dryRun = false}) {
   for (final item in report.created) stdout.writeln('  + $item');
   for (final item in report.updated) stdout.writeln('  ~ $item');
   for (final item in report.deleted) stdout.writeln('  - $item');
-  for (final item in report.preservedModified) stdout.writeln('  ! preserved modified: $item');
-  for (final item in report.preservedUnmanaged) stdout.writeln('  ! preserved unmanaged: $item');
-  for (final item in report.missingTemplates) stdout.writeln('  ! missing template: $item');
+  for (final item in report.preservedModified)
+    stdout.writeln('  ! preserved modified: $item');
+  for (final item in report.preservedUnmanaged)
+    stdout.writeln('  ! preserved unmanaged: $item');
+  for (final item in report.missingTemplates)
+    stdout.writeln('  ! missing template: $item');
   if (report.created.isEmpty &&
       report.updated.isEmpty &&
       report.deleted.isEmpty &&

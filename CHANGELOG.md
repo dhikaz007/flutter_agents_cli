@@ -2,6 +2,11 @@
 
 ## 1.6.0
 
+### Dynamic rulesets
+- Added `agents ruleset add`, `list`, and `use` for versioned external rule repositories.
+- A selected ruleset profile is recorded in the manifest, writes `PROJECT_PROFILE.md`, and installs only universal rules plus that profile under `docs/dynamic-rules/`.
+- User presets can retain optional `ruleset` and `rulesetProfile` selections.
+
 ### Existing-project detection
 - Existing project scans now default to `custom_existing` and record the observed folder tree instead of automatically equating it to a CLI architecture profile.
 - CLI architecture profiles remain explicit policy choices and never move source files.

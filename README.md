@@ -447,6 +447,28 @@ agents rule use state default
 
 `default` means the built-in CLI profile/rule. Active custom rules are copied into `docs/custom-rules/` so coding agents can read project-local, stable rule files. Precedence is: explicit current/project override > selected user custom rule > built-in CLI default/profile.
 
+## Dynamic rulesets (v1.6)
+
+Use a versioned external ruleset without copying its files into every project. Add it once to the local flutter-agents cache, initialize the Flutter project normally, then choose one profile from that ruleset:
+
+```bash
+agents ruleset add vibe-coding-rules https://github.com/dhikaz007/vibe_coding_rules_dynamic.git
+agents init
+agents ruleset use vibe-coding-rules go_router_get_it
+```
+
+For Flutter Modular projects, choose `flutter_modular` instead. `ruleset use` writes `PROJECT_PROFILE.md` and copies only universal rules plus the selected profile into `docs/dynamic-rules/`. Generated `AGENTS.md` reads that profile just in time. Do not combine profiles in one project.
+
+Presets remain supported. A preset can store `ruleset` and `rulesetProfile` alongside existing stack fields:
+
+```yaml
+name: dhikaz-go-router
+ruleset: vibe-coding-rules
+rulesetProfile: go_router_get_it
+routing: go_router
+di: injectable_get_it
+```
+
 ## Existing project safe adoption
 
 If `agents init` finds an existing `AGENTS.md` or Markdown files under `docs/`, it does not silently overwrite them. Interactive init asks how to continue:

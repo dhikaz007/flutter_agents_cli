@@ -1,5 +1,8 @@
 # Changelog
 
+## 2.1.0
+- Added read-only `agents ruleset recommend [name]` to suggest a compatible Dynamic Rules profile from project dependencies.
+
 ## 2.0.9
 - Added read-only `agents ruleset upgrade-plan` with active-profile rule and dependency change checklists.
 

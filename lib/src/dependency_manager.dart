@@ -9,15 +9,22 @@ import 'ruleset_store.dart';
 
 class DependencyManager {
   Set<String> installed(Directory root) {
+    return declaredVersions(root).keys.toSet();
+  }
+
+  Map<String, String> declaredVersions(Directory root) {
     final file = File(p.join(root.path, 'pubspec.yaml'));
-    if (!file.existsSync()) return <String>{};
+    if (!file.existsSync()) return <String, String>{};
     final yaml = loadYaml(file.readAsStringSync());
-    final values = <String>{};
+    final values = <String, String>{};
     if (yaml is YamlMap) {
       for (final key in <String>['dependencies', 'dev_dependencies']) {
         final section = yaml[key];
-        if (section is YamlMap)
-          values.addAll(section.keys.map((e) => e.toString()));
+        if (section is YamlMap) {
+          for (final entry in section.entries) {
+            values[entry.key.toString()] = entry.value?.toString() ?? 'any';
+          }
+        }
       }
     }
     return values;
@@ -50,20 +57,7 @@ class DependencyManager {
   }
 
   List<String> versionMismatches(Directory root, StackConfig config) {
-    final file = File(p.join(root.path, 'pubspec.yaml'));
-    if (!file.existsSync()) return <String>[];
-    final yaml = loadYaml(file.readAsStringSync());
-    if (yaml is! YamlMap) return <String>[];
-    final declared = <String, String>{};
-    for (final key in <String>['dependencies', 'dev_dependencies']) {
-      final section = yaml[key];
-      if (section is! YamlMap) continue;
-      for (final entry in section.entries) {
-        if (entry.value is String) {
-          declared[entry.key.toString()] = entry.value.toString();
-        }
-      }
-    }
+    final declared = declaredVersions(root);
     return expected(config).where((item) {
       final parts = item.split(':');
       final package = parts.first;

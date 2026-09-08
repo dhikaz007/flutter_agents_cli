@@ -196,6 +196,7 @@ ArgParser _buildParser() {
   ruleset.addCommand('restore');
   ruleset.addCommand('audit');
   ruleset.addCommand('upgrade-plan');
+  ruleset.addCommand('recommend');
   ruleset.addCommand('validate');
 
   final dependency = parser.addCommand('dependency');
@@ -646,6 +647,60 @@ Future<void> _ruleset(Directory root, ArgResults command) async {
       }
       stdout.writeln(
           '4. Run the project verification, including `flutter analyze`.');
+      return;
+    case 'recommend':
+      if (args.length > 1) {
+        throw ArgumentError('Usage: agents ruleset recommend [name]');
+      }
+      final manifest = ManifestStore().load(root);
+      final available = store.list();
+      final name = args.isNotEmpty
+          ? args.single
+          : manifest?.config.ruleset ??
+              (available.length == 1 ? available.single : null);
+      if (name == null) {
+        throw ArgumentError(
+          'Specify a ruleset name when more than one cached ruleset is available.',
+        );
+      }
+      final profiles = store.profiles(name);
+      final dependencies = DependencyManager().declaredVersions(root);
+      final relevantDependencies = <String>[
+        'flutter_modular',
+        'go_router',
+        'get_it',
+        'injectable',
+      ].where(dependencies.containsKey).toList();
+      final modularVersion = dependencies['flutter_modular'];
+      String? recommended;
+      String? reason;
+      final major = RegExp(r'\d+').firstMatch(modularVersion ?? '')?.group(0);
+      if (major != null && profiles.contains('flutter_modular_v$major')) {
+        recommended = 'flutter_modular_v$major';
+        reason =
+            'Detected flutter_modular $modularVersion (major version $major).';
+      } else if (dependencies.containsKey('go_router') &&
+          profiles.contains('go_router_get_it')) {
+        recommended = 'go_router_get_it';
+        final hasDi = dependencies.containsKey('get_it') ||
+            dependencies.containsKey('injectable');
+        reason = hasDi
+            ? 'Detected go_router with get_it/injectable.'
+            : 'Detected go_router; add get_it and injectable if this profile is selected.';
+      }
+      stdout.writeln('Ruleset recommendation');
+      stdout.writeln('Ruleset: $name');
+      stdout.writeln(relevantDependencies.isEmpty
+          ? 'Detected stack dependencies: none.'
+          : 'Detected stack dependencies: ${relevantDependencies.map((key) => '$key ${dependencies[key]}').join(', ')}.');
+      if (recommended == null) {
+        stdout.writeln('Recommendation: none. Select a profile explicitly.');
+        return;
+      }
+      stdout.writeln('Recommendation: $recommended');
+      stdout.writeln('Reason: $reason');
+      stdout.writeln(
+          'Preview only. Apply with `agents ruleset use $name $recommended`.');
       return;
     case 'validate':
       if (args.length != 1)

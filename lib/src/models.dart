@@ -17,6 +17,7 @@ class StackConfig {
     this.listLoader,
     this.inlineLoader,
     this.pagination,
+    this.observedStructure = const <String>[],
     this.uiComponents = const <String, String>{},
     this.rules = const <String, String>{},
   });
@@ -38,8 +39,10 @@ class StackConfig {
   String? listLoader;
   String? inlineLoader;
   String? pagination;
+  List<String> observedStructure;
   Map<String, String> uiComponents;
-  Map<String, String> rules; // layer -> custom rule name; absent means CLI default
+  Map<String, String>
+      rules; // layer -> custom rule name; absent means CLI default
 
   StackConfig copy() => StackConfig.fromJson(toJson());
 
@@ -61,6 +64,7 @@ class StackConfig {
         'listLoader': listLoader,
         'inlineLoader': inlineLoader,
         'pagination': pagination,
+        'observedStructure': observedStructure,
         'uiComponents': uiComponents,
         'rules': rules,
       };
@@ -68,6 +72,7 @@ class StackConfig {
   factory StackConfig.fromJson(Map<String, dynamic> json) {
     final rawUi = json['uiComponents'];
     final rawRules = json['rules'];
+    final rawStructure = json['observedStructure'];
     return StackConfig(
       mode: json['mode']?.toString() ?? 'existing',
       architecture: _nullable(json['architecture']),
@@ -86,11 +91,16 @@ class StackConfig {
       listLoader: _nullable(json['listLoader']),
       inlineLoader: _nullable(json['inlineLoader']),
       pagination: _nullable(json['pagination']),
+      observedStructure: rawStructure is List
+          ? rawStructure.map((item) => item.toString()).toList()
+          : <String>[],
       uiComponents: rawUi is Map
-          ? rawUi.map((key, value) => MapEntry(key.toString(), value.toString()))
+          ? rawUi
+              .map((key, value) => MapEntry(key.toString(), value.toString()))
           : <String, String>{},
       rules: rawRules is Map
-          ? rawRules.map((key, value) => MapEntry(key.toString(), value.toString()))
+          ? rawRules
+              .map((key, value) => MapEntry(key.toString(), value.toString()))
           : <String, String>{},
     );
   }
@@ -216,7 +226,8 @@ class ManagedFileRecord {
         'sha256': sha256,
       };
 
-  factory ManagedFileRecord.fromJson(Map<String, dynamic> json) => ManagedFileRecord(
+  factory ManagedFileRecord.fromJson(Map<String, dynamic> json) =>
+      ManagedFileRecord(
         path: json['path'].toString(),
         sha256: json['sha256'].toString(),
       );
@@ -256,7 +267,8 @@ class AgentsManifest {
     return AgentsManifest(
       version: json['version']?.toString() ?? 'unknown',
       config: rawConfig is Map
-          ? StackConfig.fromJson(rawConfig.map((key, value) => MapEntry(key.toString(), value)))
+          ? StackConfig.fromJson(
+              rawConfig.map((key, value) => MapEntry(key.toString(), value)))
           : StackConfig(mode: 'existing'),
       files: files,
     );
@@ -272,5 +284,7 @@ class GenerationReport {
   final List<String> missingTemplates = <String>[];
 
   bool get hasWarnings =>
-      preservedModified.isNotEmpty || preservedUnmanaged.isNotEmpty || missingTemplates.isNotEmpty;
+      preservedModified.isNotEmpty ||
+      preservedUnmanaged.isNotEmpty ||
+      missingTemplates.isNotEmpty;
 }

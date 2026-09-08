@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.6.0
+
+### Existing-project detection
+- Existing project scans now default to `custom_existing` and record the observed folder tree instead of automatically equating it to a CLI architecture profile.
+- CLI architecture profiles remain explicit policy choices and never move source files.
+- Widget detection now examines each `App*` widget implementation and its Flutter primitives, so names such as `AppButtonPrimary` and `AppInputField` are classified correctly.
+
 ## 1.5.0
 
 ### Context/cache optimization

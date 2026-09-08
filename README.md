@@ -1,5 +1,7 @@
 # flutter-agents CLI v2.1.1
 
+[![CI](https://github.com/dhikaz007/flutter_agents_cli/actions/workflows/ci.yml/badge.svg)](https://github.com/dhikaz007/flutter_agents_cli/actions/workflows/ci.yml)
+
 Dynamic, project-aware, token-efficient AGENTS rule manager for Flutter projects.
 
 It supports both:

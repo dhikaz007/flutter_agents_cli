@@ -7,7 +7,7 @@ import 'package:path/path.dart' as p;
 import 'models.dart';
 
 const String manifestFileName = '.agents-manifest';
-const String cliVersion = '1.6.0';
+const String cliVersion = '2.1.1';
 
 class ManifestStore {
   File fileFor(Directory root) => File(p.join(root.path, manifestFileName));
@@ -18,7 +18,8 @@ class ManifestStore {
     try {
       final raw = jsonDecode(file.readAsStringSync());
       if (raw is! Map) return null;
-      return AgentsManifest.fromJson(raw.map((key, value) => MapEntry(key.toString(), value)));
+      return AgentsManifest.fromJson(
+          raw.map((key, value) => MapEntry(key.toString(), value)));
     } catch (_) {
       return null;
     }
@@ -36,7 +37,9 @@ class ManifestStore {
   ManagedState stateOf(Directory root, ManagedFileRecord record) {
     final file = File(p.join(root.path, record.path));
     if (!file.existsSync()) return ManagedState.missing;
-    return hashFile(file) == record.sha256 ? ManagedState.unchanged : ManagedState.modified;
+    return hashFile(file) == record.sha256
+        ? ManagedState.unchanged
+        : ManagedState.modified;
   }
 }
 

@@ -1,5 +1,8 @@
 # Changelog
 
+## 2.1.1
+- Synchronized the CLI manifest version with the package release and added regression coverage against version drift.
+
 ## 2.1.0
 - Added read-only `agents ruleset recommend [name]` to suggest a compatible Dynamic Rules profile from project dependencies.
 

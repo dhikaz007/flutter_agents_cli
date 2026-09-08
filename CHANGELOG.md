@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.0.7
+- Added `agents ruleset restore` to return a project and its cached ruleset to the revision stored in `RULESET_LOCK.json`.
+- Ruleset locks now retain full Git revisions for reliable restoration.
+
 ## 2.0.6
 - Added read-only `agents ruleset diff` to preview remote ruleset changes and active-profile dependency impact.
 

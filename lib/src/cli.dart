@@ -193,6 +193,7 @@ ArgParser _buildParser() {
   ruleset.addCommand('diff');
   ruleset.addCommand('lock');
   ruleset.addCommand('verify');
+  ruleset.addCommand('restore');
   ruleset.addCommand('validate');
 
   final dependency = parser.addCommand('dependency');
@@ -463,7 +464,7 @@ Future<void> _ruleset(Directory root, ArgResults command) async {
           const JsonEncoder.withIndent('  ').convert(<String, String>{
         'ruleset': name,
         'profile': manifest.config.rulesetProfile!,
-        'revision': await store.revision(name),
+        'revision': await store.revision(name, short: false),
       }));
       stdout.writeln('Ruleset locked: ${file.path}');
       return;
@@ -477,11 +478,35 @@ Future<void> _ruleset(Directory root, ArgResults command) async {
       final expected = lock['revision']?.toString();
       if (name == null || expected == null)
         throw StateError('Invalid RULESET_LOCK.json.');
-      final actual = await store.revision(name);
+      final actual = await store.revision(name, short: false);
       if (actual != expected)
         throw StateError(
             'Ruleset revision mismatch: locked $expected, cache $actual.');
       stdout.writeln('Ruleset verified: $name@$actual');
+      return;
+    case 'restore':
+      final file = File(p.join(root.path, 'RULESET_LOCK.json'));
+      if (!file.existsSync()) {
+        throw StateError(
+            'RULESET_LOCK.json not found. Run `agents ruleset lock`.');
+      }
+      final lock = jsonDecode(file.readAsStringSync()) as Map<String, dynamic>;
+      final name = lock['ruleset']?.toString();
+      final profile = lock['profile']?.toString();
+      final revision = lock['revision']?.toString();
+      if (name == null || profile == null || revision == null) {
+        throw StateError('Invalid RULESET_LOCK.json.');
+      }
+      await store.restore(name, revision);
+      store.resolve(name, profile);
+      final manifest = ManifestStore().load(root);
+      if (manifest == null) throw StateError('Run `agents init` first.');
+      final config = manifest.config.copy()
+        ..ruleset = name
+        ..rulesetProfile = profile;
+      final report = await RuleGenerator().apply(root, config);
+      _printGenerationReport(report);
+      stdout.writeln('Ruleset restored: $name@$revision');
       return;
     case 'validate':
       if (args.length != 1)

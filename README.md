@@ -491,11 +491,12 @@ agents ruleset status vibe-coding-rules
 agents ruleset update vibe-coding-rules --apply
 agents ruleset lock
 agents ruleset verify
+agents ruleset restore
 agents sync
 agents doctor --fix
 ```
 
-`validate` checks required documents and required `profile.yaml` metadata. `diff` is read-only: it previews files, changed profiles, and active-profile dependency metadata before an update. `update` refreshes the cached Git ruleset; `sync` applies its active profile to the project. `doctor --fix` restores only missing CLI-managed files and preserves user-modified files.
+`validate` checks required documents and required `profile.yaml` metadata. `diff` is read-only: it previews files, changed profiles, and active-profile dependency metadata before an update. `lock` writes the exact full Git revision currently in use; `restore` returns the cache and generated dynamic rules to that locked revision. `update` refreshes the cached Git ruleset; `sync` applies its active profile to the project. `doctor --fix` restores only missing CLI-managed files and preserves user-modified files.
 
 ## Profile presets (v1.9)
 

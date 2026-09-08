@@ -89,21 +89,57 @@ class RulesetStore {
   Future<void> update(String name) async {
     final target = directory(name);
     if (!target.existsSync()) throw ArgumentError('Ruleset not found: $name');
+    final branch = await _defaultBranch(target);
+    final checkout = await Process.run('git', <String>['checkout', branch],
+        workingDirectory: target.path);
+    if (checkout.exitCode != 0) {
+      throw StateError('Could not select ruleset branch: ${checkout.stderr}');
+    }
     final result = await Process.run('git', <String>['pull', '--ff-only'],
         workingDirectory: target.path);
     if (result.exitCode != 0)
       throw StateError('Could not update ruleset: ${result.stderr}');
   }
 
-  Future<String> revision(String name) async {
+  Future<String> revision(String name, {bool short = true}) async {
     final target = directory(name);
     if (!target.existsSync()) throw ArgumentError('Ruleset not found: $name');
     final result = await Process.run(
-        'git', <String>['rev-parse', '--short', 'HEAD'],
+        'git', <String>['rev-parse', if (short) '--short', 'HEAD'],
         workingDirectory: target.path);
     if (result.exitCode != 0)
       throw StateError('Could not read ruleset revision.');
     return result.stdout.toString().trim();
+  }
+
+  Future<void> restore(String name, String revision) async {
+    final target = directory(name);
+    if (!target.existsSync()) throw ArgumentError('Ruleset not found: $name');
+    final local = await Process.run(
+      'git',
+      <String>['rev-parse', '--verify', '$revision^{commit}'],
+      workingDirectory: target.path,
+    );
+    if (local.exitCode != 0) {
+      final fetch = await Process.run(
+        'git',
+        <String>['fetch', '--depth', '1', 'origin', revision],
+        workingDirectory: target.path,
+      );
+      if (fetch.exitCode != 0) {
+        throw StateError('Could not fetch locked revision: ${fetch.stderr}');
+      }
+    }
+    final branch = await _defaultBranch(target);
+    final checkout = await Process.run(
+      'git',
+      <String>['checkout', '--force', '-B', branch, revision],
+      workingDirectory: target.path,
+    );
+    if (checkout.exitCode != 0) {
+      throw StateError(
+          'Could not restore ruleset revision: ${checkout.stderr}');
+    }
   }
 
   Future<RulesetDiff> diff(String name) async {
@@ -239,6 +275,18 @@ class RulesetStore {
     if (result.exitCode != 0)
       throw StateError('Could not read remote revision.');
     return result.stdout.toString().trim();
+  }
+
+  Future<String> _defaultBranch(Directory directory) async {
+    final result = await Process.run(
+      'git',
+      <String>['symbolic-ref', '--short', 'refs/remotes/origin/HEAD'],
+      workingDirectory: directory.path,
+    );
+    if (result.exitCode != 0) {
+      throw StateError('Could not read ruleset default branch.');
+    }
+    return result.stdout.toString().trim().replaceFirst('origin/', '');
   }
 
   String _relativeDiffPath(String path, Directory target, Directory clone) {

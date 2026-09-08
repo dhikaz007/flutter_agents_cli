@@ -1,5 +1,8 @@
 # Changelog
 
+## 2.0.8
+- Added read-only `agents ruleset audit` for active-profile, lock, managed-file, remote-update, and dependency health checks.
+
 ## 2.0.7
 - Added `agents ruleset restore` to return a project and its cached ruleset to the revision stored in `RULESET_LOCK.json`.
 - Ruleset locks now retain full Git revisions for reliable restoration.

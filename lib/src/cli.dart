@@ -194,6 +194,7 @@ ArgParser _buildParser() {
   ruleset.addCommand('lock');
   ruleset.addCommand('verify');
   ruleset.addCommand('restore');
+  ruleset.addCommand('audit');
   ruleset.addCommand('validate');
 
   final dependency = parser.addCommand('dependency');
@@ -507,6 +508,91 @@ Future<void> _ruleset(Directory root, ArgResults command) async {
       final report = await RuleGenerator().apply(root, config);
       _printGenerationReport(report);
       stdout.writeln('Ruleset restored: $name@$revision');
+      return;
+    case 'audit':
+      if (args.isNotEmpty) throw ArgumentError('Usage: agents ruleset audit');
+      final manifest = ManifestStore().load(root);
+      if (manifest?.config.ruleset == null ||
+          manifest?.config.rulesetProfile == null) {
+        throw StateError('This project has no active ruleset profile.');
+      }
+      final name = manifest!.config.ruleset!;
+      final profile = manifest.config.rulesetProfile!;
+      stdout.writeln('Ruleset audit');
+      stdout.writeln('Ruleset: $name');
+      stdout.writeln('Profile: $profile');
+
+      final lockFile = File(p.join(root.path, 'RULESET_LOCK.json'));
+      var lockMatches = false;
+      if (!lockFile.existsSync()) {
+        stdout.writeln('Lock: missing (run `agents ruleset lock`).');
+      } else {
+        final lock =
+            jsonDecode(lockFile.readAsStringSync()) as Map<String, dynamic>;
+        final expected = lock['revision']?.toString();
+        final actual = await store.revision(name, short: false);
+        lockMatches = expected == actual;
+        stdout.writeln(lockMatches
+            ? 'Lock: verified ($actual)'
+            : 'Lock: mismatch (locked ${expected ?? '-'}, cache $actual)');
+      }
+
+      final dynamicRecords = manifest.files.values.where((record) =>
+          record.path == 'PROJECT_PROFILE.md' ||
+          record.path.startsWith('docs/dynamic-rules/'));
+      var modified = 0;
+      var missing = 0;
+      for (final record in dynamicRecords) {
+        switch (ManifestStore().stateOf(root, record)) {
+          case ManagedState.modified:
+            modified++;
+          case ManagedState.missing:
+            missing++;
+          case ManagedState.unchanged:
+            break;
+        }
+      }
+      stdout.writeln(
+          'Managed dynamic files: $modified modified, $missing missing.');
+
+      final diff = await store.diff(name);
+      stdout.writeln(diff.hasChanges
+          ? 'Remote: ${diff.files.length} rule file(s) changed (run `agents ruleset diff $name`).'
+          : 'Remote: up to date.');
+
+      final dependencies = DependencyManager();
+      final missingPackages = dependencies.missing(root, manifest.config);
+      final mismatches = dependencies.versionMismatches(root, manifest.config);
+      stdout.writeln(missingPackages.isEmpty
+          ? 'Dependencies: no required packages missing.'
+          : 'Dependencies missing: ${missingPackages.join(', ')}.');
+      if (mismatches.isNotEmpty) {
+        stdout
+            .writeln('Dependency version mismatch: ${mismatches.join(', ')}.');
+      }
+
+      if (!lockMatches ||
+          modified > 0 ||
+          missing > 0 ||
+          diff.hasChanges ||
+          missingPackages.isNotEmpty ||
+          mismatches.isNotEmpty) {
+        stdout.writeln('Recommended next steps:');
+        if (!lockMatches)
+          stdout.writeln(
+              '- Run `agents ruleset lock` after confirming the current ruleset.');
+        if (modified > 0 || missing > 0)
+          stdout.writeln(
+              '- Run `agents doctor --fix` to restore missing managed files safely.');
+        if (diff.hasChanges)
+          stdout.writeln(
+              '- Run `agents ruleset diff $name`, then `agents ruleset update $name --apply` when ready.');
+        if (missingPackages.isNotEmpty || mismatches.isNotEmpty)
+          stdout.writeln(
+              '- Run `agents dependency plan` before changing dependencies.');
+      } else {
+        stdout.writeln('Audit passed.');
+      }
       return;
     case 'validate':
       if (args.length != 1)

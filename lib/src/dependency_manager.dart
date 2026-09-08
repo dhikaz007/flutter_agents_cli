@@ -49,6 +49,32 @@ class DependencyManager {
         .toList();
   }
 
+  List<String> versionMismatches(Directory root, StackConfig config) {
+    final file = File(p.join(root.path, 'pubspec.yaml'));
+    if (!file.existsSync()) return <String>[];
+    final yaml = loadYaml(file.readAsStringSync());
+    if (yaml is! YamlMap) return <String>[];
+    final declared = <String, String>{};
+    for (final key in <String>['dependencies', 'dev_dependencies']) {
+      final section = yaml[key];
+      if (section is! YamlMap) continue;
+      for (final entry in section.entries) {
+        if (entry.value is String) {
+          declared[entry.key.toString()] = entry.value.toString();
+        }
+      }
+    }
+    return expected(config).where((item) {
+      final parts = item.split(':');
+      final package = parts.first;
+      final expectedVersion =
+          parts.length > 1 ? parts.sublist(1).join(':') : null;
+      if (expectedVersion == null || expectedVersion == 'any') return false;
+      final actual = declared[package];
+      return actual != null && actual != expectedVersion;
+    }).toList();
+  }
+
   bool isRequired(String package, StackConfig config) =>
       expected(config).any((item) => item.split(':').first == package);
 

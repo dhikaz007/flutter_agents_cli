@@ -492,6 +492,8 @@ agents dependency add
 
 `add` installs only missing dependencies from the active profile. Existing projects require confirmation unless `--yes` is supplied. Remove a package with `agents dependency remove <package>`; the CLI protects packages required by the active profile unless `--force` is explicit.
 
+For Hive CE profiles, runtime packages are `hive_ce` and `hive_ce_flutter`; generators such as `hive_ce_generator` and `flutter_gen_runner` are installed as dev dependencies.
+
 ## Dynamic Rules workflow (v2.1)
 
 For an existing project, this is the recommended safe flow. All commands through `upgrade-plan` are previews; only `ruleset use`, `update --apply`, dependency changes, and `restore` write files.

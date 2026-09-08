@@ -50,15 +50,23 @@ class DependencyManager {
   }
 
   List<String> expectedDev(StackConfig config) {
-    if (config.ruleset == null || config.rulesetProfile == null) {
-      return <String>[];
+    final values = <String>{};
+    for (final key in config.profileKeys) {
+      final parts = key.split(':');
+      final package = ProfileRegistry.devPackageFor(
+        parts.first,
+        parts.sublist(1).join(':'),
+      );
+      if (package != null) values.addAll(package.split('|'));
     }
-    return RulesetStore()
-        .devDependencies(config.ruleset!, config.rulesetProfile!)
-        .entries
-        .map((entry) => '${entry.key}:${entry.value}')
-        .toList()
-      ..sort();
+    if (config.ruleset != null && config.rulesetProfile != null) {
+      for (final entry in RulesetStore()
+          .devDependencies(config.ruleset!, config.rulesetProfile!)
+          .entries) {
+        values.add('${entry.key}:${entry.value}');
+      }
+    }
+    return values.toList()..sort();
   }
 
   List<String> missing(Directory root, StackConfig config) {

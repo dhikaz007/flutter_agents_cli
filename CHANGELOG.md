@@ -1,5 +1,8 @@
 # Changelog
 
+## 2.0.2
+- Added `--output` for saving a Modular migration dry-run report as Markdown.
+
 ## 2.0.1
 - Added regression coverage for Flutter Modular v5/v6/v7 migration planning.
 

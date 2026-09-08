@@ -198,7 +198,9 @@ ArgParser _buildParser() {
     ..addFlag('force', negatable: false);
 
   final migrate = parser.addCommand('migrate');
-  migrate.addCommand('modular')..addFlag('dry-run', negatable: false);
+  migrate.addCommand('modular')
+    ..addFlag('dry-run', negatable: false)
+    ..addOption('output', help: 'Write the Markdown report to this path.');
 
   parser.addCommand('version');
   return parser;
@@ -267,7 +269,7 @@ Dependencies:
   agents dependency remove <package> [--force] [--yes]
 
 Migration planning:
-  agents migrate modular <v5|v6|v7> <v5|v6|v7> --dry-run
+  agents migrate modular <v5|v6|v7> <v5|v6|v7> --dry-run [--output report.md]
 
 Other:
   agents version
@@ -285,7 +287,7 @@ void _migrate(Directory root, ArgResults command) {
       sub!.rest.length != 2 ||
       sub['dry-run'] != true) {
     throw ArgumentError(
-        'Usage: agents migrate modular <v5|v6|v7> <v5|v6|v7> --dry-run');
+        'Usage: agents migrate modular <v5|v6|v7> <v5|v6|v7> --dry-run [--output report.md]');
   }
   final from = sub.rest[0];
   final to = sub.rest[1];
@@ -294,7 +296,14 @@ void _migrate(Directory root, ArgResults command) {
       from == to) {
     throw ArgumentError('Choose two different versions from v5, v6, v7.');
   }
-  stdout.writeln(MigrationPlanner().modularReport(root, from, to));
+  final report = MigrationPlanner().modularReport(root, from, to);
+  final output = sub['output'] as String?;
+  if (output != null && output.trim().isNotEmpty) {
+    File(p.join(root.path, output)).writeAsStringSync('$report\n');
+    stdout.writeln('Migration report written: $output');
+  } else {
+    stdout.writeln(report);
+  }
 }
 
 Future<void> _dependency(Directory root, ArgResults command) async {

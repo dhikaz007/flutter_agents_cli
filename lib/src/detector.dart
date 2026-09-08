@@ -12,7 +12,9 @@ class ProjectDetector {
       return DetectionResult(
         StackConfig(mode: 'new', architecture: 'feature_first_pragmatic_clean'),
         <String>{},
-        <String>['pubspec.yaml not found; treating this as a new/scratch project.'],
+        <String>[
+          'pubspec.yaml not found; treating this as a new/scratch project.'
+        ],
       );
     }
 
@@ -23,34 +25,47 @@ class ProjectDetector {
       architecture: architecture.name,
       featureRoot: architecture.featureRoot,
       sharedRoot: architecture.sharedRoot,
-      state: _pick(dependencies, <String>['flutter_bloc', 'flutter_riverpod', 'provider']),
-      routing: _pick(dependencies, <String>['go_router', 'flutter_modular', 'auto_route']),
+      observedStructure: _scanStructure(root),
+      state: _pick(dependencies,
+          <String>['flutter_bloc', 'flutter_riverpod', 'provider']),
+      routing: _pick(
+          dependencies, <String>['go_router', 'flutter_modular', 'auto_route']),
       di: _detectDi(dependencies),
       network: _pick(dependencies, <String>['dio', 'http']),
       storage: _detectStorage(dependencies),
       localization: _pick(dependencies, <String>['easy_localization', 'intl']),
-      assets: dependencies.contains('flutter_gen') || dependencies.contains('flutter_gen_runner')
+      assets: dependencies.contains('flutter_gen') ||
+              dependencies.contains('flutter_gen_runner')
           ? 'flutter_gen'
           : null,
-      modelCodegen: dependencies.contains('freezed') || dependencies.contains('freezed_annotation')
+      modelCodegen: dependencies.contains('freezed') ||
+              dependencies.contains('freezed_annotation')
           ? 'freezed'
           : null,
-      jsonCodegen: dependencies.contains('json_serializable') || dependencies.contains('json_annotation')
+      jsonCodegen: dependencies.contains('json_serializable') ||
+              dependencies.contains('json_annotation')
           ? 'json_serializable'
           : null,
-      blockingLoader: dependencies.contains('loader_overlay') ? 'loader_overlay' : null,
+      blockingLoader:
+          dependencies.contains('loader_overlay') ? 'loader_overlay' : null,
       listLoader: dependencies.contains('skeletonizer') ? 'skeletonizer' : null,
       inlineLoader: dependencies.contains('shimmer') ? 'shimmer' : null,
-      pagination: dependencies.contains('infinite_scroll_pagination') ? 'infinite_scroll_pagination' : null,
+      pagination: dependencies.contains('infinite_scroll_pagination')
+          ? 'infinite_scroll_pagination'
+          : null,
       uiComponents: detectUiComponents(root),
     );
 
     final notes = <String>[];
-    if (config.state == null) notes.add('No supported state-management package detected.');
-    if (config.routing == null) notes.add('No supported routing package detected.');
-    if (config.network == null) notes.add('No supported HTTP package detected.');
+    if (config.state == null)
+      notes.add('No supported state-management package detected.');
+    if (config.routing == null)
+      notes.add('No supported routing package detected.');
+    if (config.network == null)
+      notes.add('No supported HTTP package detected.');
     if (architecture.confidence == 'low') {
-      notes.add('Architecture detection confidence is low; preserve existing structure unless intentionally changed.');
+      notes.add(
+          'Architecture detection confidence is low; preserve existing structure unless intentionally changed.');
     }
     return DetectionResult(config, dependencies, notes);
   }
@@ -60,7 +75,10 @@ class ProjectDetector {
       final yaml = loadYaml(pubspec.readAsStringSync());
       final dependencies = <String>{};
       if (yaml is YamlMap) {
-        for (final sectionName in <String>['dependencies', 'dev_dependencies']) {
+        for (final sectionName in <String>[
+          'dependencies',
+          'dev_dependencies'
+        ]) {
           final section = yaml[sectionName];
           if (section is YamlMap) {
             dependencies.addAll(section.keys.map((dynamic e) => e.toString()));
@@ -82,66 +100,59 @@ class ProjectDetector {
 
   String? _detectDi(Set<String> dependencies) {
     if (dependencies.contains('flutter_modular')) return 'flutter_modular';
-    if (dependencies.contains('injectable') || dependencies.contains('get_it')) return 'injectable_get_it';
+    if (dependencies.contains('injectable') || dependencies.contains('get_it'))
+      return 'injectable_get_it';
     return null;
   }
 
   String? _detectStorage(Set<String> dependencies) {
-    if (dependencies.contains('hive_ce') || dependencies.contains('hive')) return 'hive_ce';
+    if (dependencies.contains('hive_ce') || dependencies.contains('hive'))
+      return 'hive_ce';
     return _pick(dependencies, <String>['drift', 'isar', 'shared_preferences']);
   }
 
   _ArchitectureDetection _detectArchitecture(Directory root) {
     bool exists(String path) => Directory(p.join(root.path, path)).existsSync();
 
-    if (exists('lib/feature') && (exists('lib/services') || exists('lib/routes')) && !exists('lib/core')) {
-      return _ArchitectureDetection('modular_feature', 'lib/feature', 'lib/shared', 'high');
+    if (exists('lib/feature') &&
+        (exists('lib/services') || exists('lib/routes')) &&
+        !exists('lib/core')) {
+      return _ArchitectureDetection(
+          'custom_existing', 'lib/feature', 'lib/shared', 'high');
     }
     if (exists('lib/feature') && exists('lib/core')) {
-      return _ArchitectureDetection('feature_first_pragmatic_clean', 'lib/feature', 'lib/core', 'high');
+      return _ArchitectureDetection(
+          'custom_existing', 'lib/feature', 'lib/core', 'high');
     }
     if (exists('lib/features') && exists('lib/core')) {
-      final clean = _containsAnyDirectory(root, <String>['domain', 'data', 'presentation']);
       return _ArchitectureDetection(
-        clean ? 'feature_first_clean' : 'feature_first_simple',
-        'lib/features',
-        'lib/core',
-        clean ? 'high' : 'medium',
-      );
+          'custom_existing', 'lib/features', 'lib/core', 'high');
     }
     if (Directory(p.join(root.path, 'lib')).existsSync()) {
       return _ArchitectureDetection('custom_existing', null, null, 'low');
     }
-    return _ArchitectureDetection('feature_first_pragmatic_clean', 'lib/feature', 'lib/core', 'low');
+    return _ArchitectureDetection(
+        'feature_first_pragmatic_clean', 'lib/feature', 'lib/core', 'low');
   }
 
-  bool _containsAnyDirectory(Directory root, List<String> names) {
-    final featureRoots = <Directory>[
-      Directory(p.join(root.path, 'lib', 'feature')),
-      Directory(p.join(root.path, 'lib', 'features')),
-    ];
-    for (final featureRoot in featureRoots) {
-      if (!featureRoot.existsSync()) continue;
-      var checked = 0;
-      for (final entity in featureRoot.listSync(recursive: true, followLinks: false)) {
-        if (entity is Directory && names.contains(p.basename(entity.path))) return true;
-        if (++checked > 800) break;
-      }
+  List<String> _scanStructure(Directory root) {
+    final lib = Directory(p.join(root.path, 'lib'));
+    if (!lib.existsSync()) return <String>[];
+    final paths = <String>[];
+    for (final entity in lib.listSync(recursive: true, followLinks: false)) {
+      if (entity is! Directory) continue;
+      final relative = p.relative(entity.path, from: root.path);
+      if (relative.split(p.separator).length <= 6) paths.add(relative);
+      if (paths.length >= 200) break;
     }
-    return false;
+    paths.sort();
+    return paths;
   }
 
   Map<String, String> detectUiComponents(Directory root) {
     final lib = Directory(p.join(root.path, 'lib'));
     if (!lib.existsSync()) return <String, String>{};
 
-    final patterns = <String, RegExp>{
-      'Button': RegExp(r'class\s+(App\w*Button)\b'),
-      'TextField': RegExp(r'class\s+(App\w*(?:TextField|Input))\b'),
-      'Text': RegExp(r'class\s+(App\w*Text)\b'),
-      'Svg': RegExp(r'class\s+(App\w*Svg)\b'),
-      'Card': RegExp(r'class\s+(App\w*Card)\b'),
-    };
     final result = <String, String>{};
     var scanned = 0;
     for (final entity in lib.listSync(recursive: true, followLinks: false)) {
@@ -153,14 +164,54 @@ class ProjectDetector {
       } catch (_) {
         continue;
       }
-      for (final entry in patterns.entries) {
-        if (result.containsKey(entry.key)) continue;
-        final match = entry.value.firstMatch(source);
-        if (match != null) result[entry.key] = match.group(1)!;
+      final declarations = RegExp(r'class\s+(App\w*)\s+extends\s+\w+')
+          .allMatches(source)
+          .toList();
+      for (var index = 0; index < declarations.length; index++) {
+        final name = declarations[index].group(1)!;
+        final end = index + 1 < declarations.length
+            ? declarations[index + 1].start
+            : source.length;
+        final kind =
+            _widgetKind(name, source.substring(declarations[index].start, end));
+        if (kind != null && !result.containsKey(kind)) result[kind] = name;
       }
-      if (result.length == patterns.length) break;
     }
     return result;
+  }
+
+  String? _widgetKind(String name, String implementation) {
+    final signals = <String, RegExp>{
+      'Button': RegExp(
+          r'\b(?:ElevatedButton|FilledButton|OutlinedButton|TextButton|IconButton|CupertinoButton)\b'),
+      'Input': RegExp(
+          r'\b(?:TextField|TextFormField|InputDecorator|EditableText)\b'),
+      'AppBar': RegExp(r'\b(?:AppBar|SliverAppBar|CupertinoNavigationBar)\b'),
+      'Dialog': RegExp(r'\b(?:AlertDialog|Dialog|SimpleDialog|showDialog)\b'),
+      'Dropdown': RegExp(r'\b(?:DropdownButton|DropdownMenu)\b'),
+      'Loading': RegExp(
+          r'\b(?:CircularProgressIndicator|LinearProgressIndicator|CupertinoActivityIndicator)\b'),
+      'Svg': RegExp(r'\b(?:SvgPicture|flutter_svg)\b'),
+      'Text': RegExp(r'\bText\s*\('),
+      'Card': RegExp(r'\bCard\s*\('),
+      'Spacer': RegExp(r'\bSpacer\s*\('),
+    };
+    for (final signal in signals.entries) {
+      if (signal.value.hasMatch(implementation)) return signal.key;
+    }
+    final lower = name.toLowerCase();
+    if (lower.contains('button')) return 'Button';
+    if (lower.contains('input') || lower.contains('textfield')) return 'Input';
+    if (lower.contains('appbar')) return 'AppBar';
+    if (lower.contains('dialog')) return 'Dialog';
+    if (lower.contains('dropdown')) return 'Dropdown';
+    if (lower.contains('loading') || lower.contains('spinner'))
+      return 'Loading';
+    if (lower.contains('svg')) return 'Svg';
+    if (lower.contains('text')) return 'Text';
+    if (lower.contains('card')) return 'Card';
+    if (lower.contains('spacer')) return 'Spacer';
+    return null;
   }
 
   Map<String, int> scanConventionSignals(Directory root) {
@@ -190,7 +241,8 @@ class ProjectDetector {
         continue;
       }
       for (final entry in signals.entries) {
-        if (entry.value.hasMatch(source)) counts[entry.key] = counts[entry.key]! + 1;
+        if (entry.value.hasMatch(source))
+          counts[entry.key] = counts[entry.key]! + 1;
       }
     }
     return counts;
@@ -198,7 +250,8 @@ class ProjectDetector {
 }
 
 class _ArchitectureDetection {
-  _ArchitectureDetection(this.name, this.featureRoot, this.sharedRoot, this.confidence);
+  _ArchitectureDetection(
+      this.name, this.featureRoot, this.sharedRoot, this.confidence);
 
   final String name;
   final String? featureRoot;

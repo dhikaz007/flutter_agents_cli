@@ -1,4 +1,4 @@
-# flutter-agents CLI v1.5.0
+# flutter-agents CLI v1.6.0
 
 Dynamic, project-aware, token-efficient AGENTS rule manager for Flutter projects.
 
@@ -42,7 +42,7 @@ cd project_a
 agents init
 ```
 
-The CLI inspects `pubspec.yaml`, `lib/`, common architecture roots, loading packages, codegen, and reusable UI component candidates. You confirm/adjust the result before rules are installed.
+The CLI inspects `pubspec.yaml`, `lib/`, the observed folder tree, loading packages, codegen, and reusable UI component candidates. Existing-project scans default to `custom_existing`: the scanned structure is preserved as the source of truth, while a CLI architecture profile is an explicit policy choice. Widget candidates are classified from their implementation (for example, the Flutter components used inside `build`), not only a strict class-name suffix. You confirm/adjust the result before rules are installed.
 
 ### New/scratch project
 
@@ -153,7 +153,7 @@ custom_existing
 
 `structure set` changes **agent policy only**. It never moves application source files.
 
-For existing projects the default is to preserve detected/custom structure unless you intentionally change the profile.
+For existing projects the default is `custom_existing`, with the observed folder tree recorded in `PROJECT-STACK.md`. It never equates your source tree with a CLI template unless you intentionally choose a profile.
 
 ## Package/rule profiles
 

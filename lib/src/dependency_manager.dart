@@ -49,9 +49,28 @@ class DependencyManager {
     return values.toList()..sort();
   }
 
+  List<String> expectedDev(StackConfig config) {
+    if (config.ruleset == null || config.rulesetProfile == null) {
+      return <String>[];
+    }
+    return RulesetStore()
+        .devDependencies(config.ruleset!, config.rulesetProfile!)
+        .entries
+        .map((entry) => '${entry.key}:${entry.value}')
+        .toList()
+      ..sort();
+  }
+
   List<String> missing(Directory root, StackConfig config) {
     final present = installed(root);
     return expected(config)
+        .where((item) => !present.contains(item.split(':').first))
+        .toList();
+  }
+
+  List<String> missingDev(Directory root, StackConfig config) {
+    final present = installed(root);
+    return expectedDev(config)
         .where((item) => !present.contains(item.split(':').first))
         .toList();
   }

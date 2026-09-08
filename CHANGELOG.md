@@ -1,5 +1,8 @@
 # Changelog
 
+## 2.1.2
+- Added Dynamic Rules `dev_dependencies` support to dependency planning and installation.
+
 ## Unreleased
 - Updated the GitHub README with the v2.1 Dynamic Rules workflow and the complete ruleset command reference.
 - Added GitHub Actions CI for analysis, tests, and Dynamic Rules profile smoke tests.

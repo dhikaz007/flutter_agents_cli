@@ -332,21 +332,38 @@ Future<void> _dependency(Directory root, ArgResults command) async {
   final args = sub?.rest ?? <String>[];
   if (sub?.name == 'plan') {
     final missing = manager.missing(root, manifest.config);
-    stdout.writeln(missing.isEmpty
-        ? 'All active-profile dependencies are present.'
-        : 'Missing dependencies:\n${missing.map((item) => '  - $item').join('\n')}');
+    final missingDev = manager.missingDev(root, manifest.config);
+    if (missing.isEmpty && missingDev.isEmpty) {
+      stdout.writeln('All active-profile dependencies are present.');
+      return;
+    }
+    if (missing.isNotEmpty) {
+      stdout.writeln(
+          'Missing dependencies:\n${missing.map((item) => '  - $item').join('\n')}');
+    }
+    if (missingDev.isNotEmpty) {
+      stdout.writeln(
+          'Missing dev dependencies:\n${missingDev.map((item) => '  - $item').join('\n')}');
+    }
     return;
   }
   if (sub?.name == 'add') {
     final packages =
         args.isEmpty ? manager.missing(root, manifest.config) : args;
-    if (packages.isEmpty) {
+    final devPackages =
+        args.isEmpty ? manager.missingDev(root, manifest.config) : <String>[];
+    if (packages.isEmpty && devPackages.isEmpty) {
       stdout.writeln('No dependencies to add.');
       return;
     }
     if (sub?['yes'] != true &&
-        !confirm('Add ${packages.join(', ')} to pubspec.yaml?')) return;
-    await manager.run(root, <String>['pub', 'add', ...packages]);
+        !confirm(
+            'Add ${[...packages, ...devPackages].join(', ')} to pubspec.yaml?'))
+      return;
+    if (packages.isNotEmpty)
+      await manager.run(root, <String>['pub', 'add', ...packages]);
+    if (devPackages.isNotEmpty)
+      await manager.run(root, <String>['pub', 'add', '--dev', ...devPackages]);
     stdout.writeln('Dependencies added.');
     return;
   }

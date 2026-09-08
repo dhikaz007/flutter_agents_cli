@@ -247,13 +247,25 @@ class RulesetStore {
   }
 
   Map<String, String> dependencies(String name, String profile) {
+    return _dependencySection(name, profile, 'dependencies');
+  }
+
+  Map<String, String> devDependencies(String name, String profile) {
+    return _dependencySection(name, profile, 'dev_dependencies');
+  }
+
+  Map<String, String> _dependencySection(
+    String name,
+    String profile,
+    String section,
+  ) {
     final file = File(p.join(
         resolve(name, profile).path, 'profiles', profile, 'profile.yaml'));
     if (!file.existsSync()) return <String, String>{};
     final yaml = loadYaml(file.readAsStringSync());
-    if (yaml is! YamlMap || yaml['dependencies'] is! YamlMap)
+    if (yaml is! YamlMap || yaml[section] is! YamlMap)
       return <String, String>{};
-    final values = yaml['dependencies'] as YamlMap;
+    final values = yaml[section] as YamlMap;
     return values
         .map((key, value) => MapEntry(key.toString(), value.toString()));
   }

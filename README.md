@@ -1,4 +1,7 @@
-# flutter-agents CLI v1.6.0
+# flutter-agents CLI v2.1.1
+
+[![CI](https://github.com/dhikaz007/flutter_agents_cli/actions/workflows/ci.yml/badge.svg)](https://github.com/dhikaz007/flutter_agents_cli/actions/workflows/ci.yml)
+[![Release](https://github.com/dhikaz007/flutter_agents_cli/actions/workflows/release.yml/badge.svg)](https://github.com/dhikaz007/flutter_agents_cli/actions/workflows/release.yml)
 
 Dynamic, project-aware, token-efficient AGENTS rule manager for Flutter projects.
 
@@ -23,6 +26,15 @@ agents init
 ```
 
 If the global executable is not on PATH, Dart will tell you the pub-cache bin path to add.
+
+## Release
+
+Push a version tag after CI is green to create a GitHub Release with generated release notes:
+
+```bash
+git tag v2.1.1
+git push origin v2.1.1
+```
 
 ## Main commands
 
@@ -446,6 +458,97 @@ agents rule use state default
 ```
 
 `default` means the built-in CLI profile/rule. Active custom rules are copied into `docs/custom-rules/` so coding agents can read project-local, stable rule files. Precedence is: explicit current/project override > selected user custom rule > built-in CLI default/profile.
+
+## Dynamic rulesets (v1.6)
+
+Use a versioned external ruleset without copying its files into every project. Add it once to the local flutter-agents cache, initialize the Flutter project normally, then choose one profile from that ruleset:
+
+```bash
+agents ruleset add vibe-coding-rules https://github.com/dhikaz007/vibe_coding_rules_dynamic.git
+agents init
+agents ruleset use vibe-coding-rules go_router_get_it
+```
+
+For Flutter Modular projects, choose the matching `flutter_modular_v5`, `flutter_modular_v6`, or `flutter_modular_v7` profile. `ruleset use` writes `PROJECT_PROFILE.md` and copies only universal rules plus the selected profile into `docs/dynamic-rules/`. Generated `AGENTS.md` reads that profile just in time. Do not combine profiles in one project.
+
+Presets remain supported. A preset can store `ruleset` and `rulesetProfile` alongside existing stack fields:
+
+```yaml
+name: dhikaz-go-router
+ruleset: vibe-coding-rules
+rulesetProfile: go_router_get_it
+routing: go_router
+di: injectable_get_it
+```
+
+## Dependency management (v1.7)
+
+After initializing a project, preview packages required by the active stack/profile before making any change:
+
+```bash
+agents dependency plan
+agents dependency add
+```
+
+`add` installs only missing dependencies from the active profile. Existing projects require confirmation unless `--yes` is supplied. Remove a package with `agents dependency remove <package>`; the CLI protects packages required by the active profile unless `--force` is explicit.
+
+## Dynamic Rules workflow (v2.1)
+
+For an existing project, this is the recommended safe flow. All commands through `upgrade-plan` are previews; only `ruleset use`, `update --apply`, dependency changes, and `restore` write files.
+
+```bash
+agents ruleset add vibe-coding-rules https://github.com/dhikaz007/vibe_coding_rules_dynamic.git
+agents init
+agents ruleset recommend vibe-coding-rules
+agents ruleset use vibe-coding-rules flutter_modular_v6
+agents dependency plan
+agents ruleset audit
+agents ruleset lock
+```
+
+Use the matching profile for Flutter Modular v5, v6, or v7. For GoRouter projects use `go_router_get_it`.
+
+### Ruleset maintenance
+
+```bash
+agents ruleset profiles vibe-coding-rules
+agents ruleset validate vibe-coding-rules
+agents ruleset diff vibe-coding-rules
+agents ruleset update vibe-coding-rules
+agents ruleset status vibe-coding-rules
+agents ruleset update vibe-coding-rules --apply
+agents ruleset lock
+agents ruleset verify
+agents ruleset restore
+agents ruleset audit
+agents ruleset upgrade-plan
+agents ruleset recommend vibe-coding-rules
+agents style audit
+agents sync
+agents doctor --fix
+```
+
+`dependency plan` and `dependency add` now preserve the distinction between runtime and dev dependencies defined by the active profile. `validate` checks required documents and required `profile.yaml` metadata. `recommend` suggests a compatible available profile from an existing project's dependencies without applying it. `diff` is read-only: it previews files, changed profiles, and active-profile dependency metadata before an update. `upgrade-plan` turns the remote diff into a review checklist for the active profile, including exact profile dependency changes. `lock` writes the exact full Git revision currently in use; `restore` returns the cache and generated dynamic rules to that locked revision. `audit` gives a single read-only health report for the selected profile, lock, managed files, remote changes, and required dependencies. `update` refreshes the cached Git ruleset; `sync` applies its active profile to the project. `doctor --fix` restores only missing CLI-managed files and preserves user-modified files.
+
+## Profile presets (v1.9)
+
+Create a reusable preset from a ruleset profile without writing YAML by hand:
+
+```bash
+agents preset from-profile dhikaz-modular-v7 vibe-coding-rules flutter_modular_v7
+agents init --preset dhikaz-modular-v7
+```
+
+## Migration planning (v2.0)
+
+Preview the source areas that require review before a Flutter Modular major-version migration:
+
+```bash
+agents migrate modular v6 v7 --dry-run
+agents migrate modular v6 v7 --dry-run --output docs/migrations/modular-v7.md
+```
+
+This command only reports observed v5/v6/v7 APIs and a manual review checklist. It never edits source files or `pubspec.yaml`.
 
 ## Existing project safe adoption
 

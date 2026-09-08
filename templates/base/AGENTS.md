@@ -24,6 +24,7 @@ Load context in layers. Start narrow; inspect the closest relevant files before 
 
 ### JUST IN TIME
 
+- If `PROJECT_PROFILE.md` exists, read it and then load only the matching files under `docs/dynamic-rules/rules/` and `docs/dynamic-rules/profiles/<profile>/` for concerns touched by the task. Do not mix dynamic profiles.
 - Read the relevant active `docs/custom-rules/<layer>.md` only after `PROJECT-STACK.md` identifies that touched layer.
 - Load the matching profile/rule below only when the implementation actually touches that concern.
 - Read only relevant API documentation sections; do not preload all API/project docs.

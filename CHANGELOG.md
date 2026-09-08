@@ -1,6 +1,75 @@
 # Changelog
 
+## 2.1.3
+- Added read-only `agents style audit` for Dynamic Rules presentation-style findings.
+
+## 2.1.2
+- Added Dynamic Rules `dev_dependencies` support to dependency planning and installation.
+
+## Unreleased
+- Updated the GitHub README with the v2.1 Dynamic Rules workflow and the complete ruleset command reference.
+- Added GitHub Actions CI for analysis, tests, and Dynamic Rules profile smoke tests.
+- Added GitHub Release automation for version tags.
+
+## 2.1.1
+- Synchronized the CLI manifest version with the package release and added regression coverage against version drift.
+
+## 2.1.0
+- Added read-only `agents ruleset recommend [name]` to suggest a compatible Dynamic Rules profile from project dependencies.
+
+## 2.0.9
+- Added read-only `agents ruleset upgrade-plan` with active-profile rule and dependency change checklists.
+
+## 2.0.8
+- Added read-only `agents ruleset audit` for active-profile, lock, managed-file, remote-update, and dependency health checks.
+
+## 2.0.7
+- Added `agents ruleset restore` to return a project and its cached ruleset to the revision stored in `RULESET_LOCK.json`.
+- Ruleset locks now retain full Git revisions for reliable restoration.
+
+## 2.0.6
+- Added read-only `agents ruleset diff` to preview remote ruleset changes and active-profile dependency impact.
+
+## 2.0.5
+- Added `agents ruleset validate` to check required profile documents and metadata before use.
+
+## 2.0.4
+- Added `agents ruleset lock` and `agents ruleset verify` for reproducible ruleset revisions.
+
+## 2.0.3
+- Dependency planning now reads package versions from the active ruleset profile metadata instead of hardcoded Modular versions.
+
+## 2.0.2
+- Added `--output` for saving a Modular migration dry-run report as Markdown.
+
+## 2.0.1
+- Added regression coverage for Flutter Modular v5/v6/v7 migration planning.
+
+## 2.0.0
+- Added `agents migrate modular <from> <to> --dry-run` to scan legacy Modular API usage and generate a review checklist without modifying source.
+
+## 1.9.0
+- Added `agents preset from-profile <name> <ruleset> <profile>`.
+- Ruleset profile metadata now supplies architecture, routing, and DI selections for generated presets.
+- Added `agents ruleset status` and `agents ruleset update --apply`.
+
+## 1.8.0
+- Added `agents ruleset update` and `agents ruleset profiles`.
+- Added `agents doctor --fix` for safe restoration of missing managed files while preserving modified files.
+
+## 1.7.0
+
+### Dependency management
+- Added `agents dependency plan`, `add`, and guarded `remove` commands.
+- Dependency installation is derived from the active stack/profile and requires confirmation by default.
+- Active-profile dependencies cannot be removed without an explicit `--force`.
+
 ## 1.6.0
+
+### Dynamic rulesets
+- Added `agents ruleset add`, `list`, and `use` for versioned external rule repositories.
+- A selected ruleset profile is recorded in the manifest, writes `PROJECT_PROFILE.md`, and installs only universal rules plus that profile under `docs/dynamic-rules/`.
+- User presets can retain optional `ruleset` and `rulesetProfile` selections.
 
 ### Existing-project detection
 - Existing project scans now default to `custom_existing` and record the observed folder tree instead of automatically equating it to a CLI architecture profile.

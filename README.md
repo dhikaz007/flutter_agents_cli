@@ -255,14 +255,11 @@ agents context "ubah warna button login"
 Example result:
 
 ```text
-Concerns: ui, security
+Concerns: ui
 
 Recommended context:
   AGENTS.md
-  docs/PROJECT-STACK.md
-  docs/ARCHITECTURE-ESSENTIAL.md
   docs/rules/UI.md
-  docs/rules/SECURITY.md
 
 Estimated rule context: ~... tokens
 ```
@@ -273,9 +270,17 @@ For an API task:
 agents context "integrasikan API delete account"
 ```
 
-The CLI will include only active network/security/state profiles needed by its lightweight task classifier, and warn when API contract docs are absent.
+The classifier is operation-aware. It treats a visual-only change such as `ubah warna button login` as UI work, not authentication work. Security is loaded only for explicit credentials/tokens, authentication or authorization flows, password rules, secure storage, or destructive/sensitive operations.
 
-The token estimate is intentionally rough (character based). It estimates rule-document context only, not source code, conversation history, tool output, or provider system prompts.
+`AGENTS.md` is a stable context router with three layers:
+
+- **ALWAYS:** the router, current requirement, and nearest comparable implementation.
+- **CONDITIONAL BASE:** project stack only for stack-relevant work; architecture essentials only for architecture/cross-domain work.
+- **JUST IN TIME:** the active profile, custom rule, API section, and focused test/build output only when the implementation needs it.
+
+Start with narrow repository inspection instead of a broad recursive scan. Do not repeatedly read unchanged documents during one task. `PROJECT-RULES.md` and `LEARNED-CONVENTIONS.md` remain available as user-owned evidence, but are not global required context.
+
+The target is lower **weighted billable context**: fewer unnecessary tokens from always-loaded rules, broad search results, and irrelevant terminal/test/build output. This is more meaningful than cache-hit percentage alone. The estimate is intentionally rough (character based) and covers selected rule documents only, not source code, conversation history, tool output, or provider system prompts.
 
 ## Learn existing conventions
 

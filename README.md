@@ -469,6 +469,17 @@ routing: go_router
 di: injectable_get_it
 ```
 
+## Dependency management (v1.7)
+
+After initializing a project, preview packages required by the active stack/profile before making any change:
+
+```bash
+agents dependency plan
+agents dependency add
+```
+
+`add` installs only missing dependencies from the active profile. Existing projects require confirmation unless `--yes` is supplied. Remove a package with `agents dependency remove <package>`; the CLI protects packages required by the active profile unless `--force` is explicit.
+
 ## Existing project safe adoption
 
 If `agents init` finds an existing `AGENTS.md` or Markdown files under `docs/`, it does not silently overwrite them. Interactive init asks how to continue:

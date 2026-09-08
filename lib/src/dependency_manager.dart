@@ -1,0 +1,57 @@
+import 'dart:io';
+
+import 'package:path/path.dart' as p;
+import 'package:yaml/yaml.dart';
+
+import 'models.dart';
+import 'registry.dart';
+
+class DependencyManager {
+  Set<String> installed(Directory root) {
+    final file = File(p.join(root.path, 'pubspec.yaml'));
+    if (!file.existsSync()) return <String>{};
+    final yaml = loadYaml(file.readAsStringSync());
+    final values = <String>{};
+    if (yaml is YamlMap) {
+      for (final key in <String>['dependencies', 'dev_dependencies']) {
+        final section = yaml[key];
+        if (section is YamlMap)
+          values.addAll(section.keys.map((e) => e.toString()));
+      }
+    }
+    return values;
+  }
+
+  List<String> expected(StackConfig config) {
+    final values = <String>{};
+    for (final key in config.profileKeys) {
+      final parts = key.split(':');
+      final package =
+          ProfileRegistry.packageFor(parts.first, parts.sublist(1).join(':'));
+      if (package != null) values.addAll(package.split('|'));
+    }
+    if (config.rulesetProfile == 'flutter_modular_v5')
+      values.add('flutter_modular:^5.0.3');
+    if (config.rulesetProfile == 'flutter_modular_v6')
+      values.add('flutter_modular:^6.4.1');
+    if (config.rulesetProfile == 'flutter_modular_v7')
+      values.add('flutter_modular:^7.1.0');
+    return values.toList()..sort();
+  }
+
+  List<String> missing(Directory root, StackConfig config) {
+    final present = installed(root);
+    return expected(config)
+        .where((item) => !present.contains(item.split(':').first))
+        .toList();
+  }
+
+  bool isRequired(String package, StackConfig config) =>
+      expected(config).any((item) => item.split(':').first == package);
+
+  Future<void> run(Directory root, List<String> args) async {
+    final result =
+        await Process.run('flutter', args, workingDirectory: root.path);
+    if (result.exitCode != 0) throw StateError(result.stderr.toString().trim());
+  }
+}

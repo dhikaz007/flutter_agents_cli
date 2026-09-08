@@ -5,6 +5,7 @@ import 'package:path/path.dart' as p;
 
 import 'adoption.dart';
 import 'context_planner.dart';
+import 'dependency_manager.dart';
 import 'detector.dart';
 import 'generator.dart';
 import 'manifest.dart';
@@ -80,6 +81,9 @@ Future<void> runAgents(List<String> arguments) async {
         return;
       case 'ruleset':
         await _ruleset(root, command);
+        return;
+      case 'dependency':
+        await _dependency(root, command);
         return;
       case 'version':
         stdout.writeln('flutter-agents $cliVersion');
@@ -178,6 +182,13 @@ ArgParser _buildParser() {
   ruleset.addCommand('add');
   ruleset.addCommand('use');
 
+  final dependency = parser.addCommand('dependency');
+  dependency.addCommand('plan');
+  dependency.addCommand('add')..addFlag('yes', abbr: 'y', negatable: false);
+  dependency.addCommand('remove')
+    ..addFlag('yes', abbr: 'y', negatable: false)
+    ..addFlag('force', negatable: false);
+
   parser.addCommand('version');
   return parser;
 }
@@ -236,6 +247,11 @@ Dynamic rulesets:
   agents ruleset list
   agents ruleset use <name> <profile>
 
+Dependencies:
+  agents dependency plan
+  agents dependency add [package ...] [--yes]
+  agents dependency remove <package> [--force] [--yes]
+
 Other:
   agents version
 
@@ -244,6 +260,50 @@ Profile kinds:
   assets, codegen, loading-blocking, loading-list, loading-inline, pagination
 
 Use `agents context` to preview the minimum rule context for a coding task.''');
+}
+
+Future<void> _dependency(Directory root, ArgResults command) async {
+  final sub = command.command;
+  final manifest = ManifestStore().load(root);
+  if (manifest == null) throw StateError('Run `agents init` first.');
+  final manager = DependencyManager();
+  final args = sub?.rest ?? <String>[];
+  if (sub?.name == 'plan') {
+    final missing = manager.missing(root, manifest.config);
+    stdout.writeln(missing.isEmpty
+        ? 'All active-profile dependencies are present.'
+        : 'Missing dependencies:\n${missing.map((item) => '  - $item').join('\n')}');
+    return;
+  }
+  if (sub?.name == 'add') {
+    final packages =
+        args.isEmpty ? manager.missing(root, manifest.config) : args;
+    if (packages.isEmpty) {
+      stdout.writeln('No dependencies to add.');
+      return;
+    }
+    if (sub?['yes'] != true &&
+        !confirm('Add ${packages.join(', ')} to pubspec.yaml?')) return;
+    await manager.run(root, <String>['pub', 'add', ...packages]);
+    stdout.writeln('Dependencies added.');
+    return;
+  }
+  if (sub?.name == 'remove') {
+    if (args.length != 1)
+      throw ArgumentError(
+          'Usage: agents dependency remove <package> [--force] [--yes]');
+    final package = args.single;
+    if (manager.isRequired(package, manifest.config) && sub?['force'] != true) {
+      throw StateError(
+          '$package is required by the active profile. Use --force only after changing the profile.');
+    }
+    if (sub?['yes'] != true && !confirm('Remove $package from pubspec.yaml?'))
+      return;
+    await manager.run(root, <String>['pub', 'remove', package]);
+    stdout.writeln('Dependency removed.');
+    return;
+  }
+  throw ArgumentError('Usage: agents dependency <plan|add|remove>');
 }
 
 Future<void> _ruleset(Directory root, ArgResults command) async {
@@ -323,8 +383,7 @@ Future<void> _init(Directory root, ArgResults command) async {
       if (!confirm(
         'Replace overlapping existing AGENTS/docs files after creating a backup?',
         defaultYes: false,
-      ))
-        return;
+      )) return;
     }
   }
 
@@ -728,12 +787,11 @@ Future<void> _uninstall(Directory root, ArgResults command) async {
 void _removeEmptyDirs(Directory root) {
   final docs = Directory(p.join(root.path, 'docs'));
   if (!docs.existsSync()) return;
-  final dirs =
-      docs
-          .listSync(recursive: true, followLinks: false)
-          .whereType<Directory>()
-          .toList()
-        ..sort((a, b) => b.path.length.compareTo(a.path.length));
+  final dirs = docs
+      .listSync(recursive: true, followLinks: false)
+      .whereType<Directory>()
+      .toList()
+    ..sort((a, b) => b.path.length.compareTo(a.path.length));
   for (final dir in dirs) {
     if (dir.existsSync() && dir.listSync().isEmpty) dir.deleteSync();
   }
@@ -1082,8 +1140,7 @@ void _preset(Directory root, ArgResults command) {
       return;
     }
     if (sub['yes'] != true &&
-        !confirm('Delete user preset "$name"?', defaultYes: false))
-      return;
+        !confirm('Delete user preset "$name"?', defaultYes: false)) return;
     io.deleteUser(name);
     stdout.writeln('Deleted user preset: $name');
     return;
@@ -1173,7 +1230,8 @@ void _editPresetRules(PresetDocument document, {required bool onlyAsk}) {
     ...store.layers(),
     ...store.readDefaults().keys,
     ...document.ruleLayers,
-  }.toList()..sort();
+  }.toList()
+    ..sort();
   for (final layer in layers) {
     if (onlyAsk && !confirm('Configure rule "$layer" now?', defaultYes: false))
       continue;
@@ -1182,7 +1240,7 @@ void _editPresetRules(PresetDocument document, {required bool onlyAsk}) {
         document.config.rules[layer] ?? store.defaultFor(layer) ?? 'default';
     final selected =
         choose('Rule: $layer', options, detected: current, allowNone: false) ??
-        'default';
+            'default';
     document.config.rules[layer] = selected;
     document.ruleLayers.add(layer);
   }

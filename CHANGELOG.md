@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.7.0
+
+### Dependency management
+- Added `agents dependency plan`, `add`, and guarded `remove` commands.
+- Dependency installation is derived from the active stack/profile and requires confirmation by default.
+- Active-profile dependencies cannot be removed without an explicit `--force`.
+
 ## 1.6.0
 
 ### Dynamic rulesets

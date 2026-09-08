@@ -1,6 +1,6 @@
 name: flutter_agents_cli
 description: Dynamic, project-aware, token-efficient AGENTS.md initializer and rule manager for Flutter projects.
-version: 1.6.0
+version: 1.7.0
 publish_to: none
 environment:
   sdk: ">=3.3.0 <4.0.0"

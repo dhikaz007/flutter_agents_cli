@@ -1,5 +1,8 @@
 # Changelog
 
+## 2.1.4
+- Corrected dependency planning for `hive_ce`, `hive_ce_flutter`, `hive_ce_generator`, and `flutter_gen_runner`.
+
 ## 2.1.3
 - Added read-only `agents style audit` for Dynamic Rules presentation-style findings.
 

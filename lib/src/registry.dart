@@ -10,7 +10,12 @@ class ProfileRegistry {
       'custom_existing',
     ],
     'state': <String>['flutter_bloc', 'flutter_riverpod', 'provider'],
-    'routing': <String>['go_router', 'flutter_modular', 'auto_route', 'navigator'],
+    'routing': <String>[
+      'go_router',
+      'flutter_modular',
+      'auto_route',
+      'navigator'
+    ],
     'di': <String>['injectable_get_it', 'flutter_modular', 'manual'],
     'network': <String>['dio', 'http'],
     'storage': <String>['hive_ce', 'drift', 'isar', 'shared_preferences'],
@@ -28,7 +33,8 @@ class ProfileRegistry {
     return 'docs/profiles/$folderKind/$name.md';
   }
 
-  static bool supports(String kind, String name) => options[kind]?.contains(name) ?? false;
+  static bool supports(String kind, String name) =>
+      options[kind]?.contains(name) ?? false;
 
   static List<String> values(String kind) => options[kind] ?? const <String>[];
 
@@ -55,7 +61,7 @@ class ProfileRegistry {
       case 'network:http':
         return 'http';
       case 'storage:hive_ce':
-        return 'hive_ce|hive';
+        return 'hive_ce|hive_ce_flutter';
       case 'storage:drift':
         return 'drift';
       case 'storage:isar':
@@ -67,7 +73,7 @@ class ProfileRegistry {
       case 'localization:intl':
         return 'intl';
       case 'assets:flutter_gen':
-        return 'flutter_gen|flutter_gen_runner';
+        return null;
       case 'codegen:freezed':
         return 'freezed|freezed_annotation';
       case 'loading-blocking:loader_overlay':
@@ -81,10 +87,23 @@ class ProfileRegistry {
     }
     return null;
   }
+
+  static String? devPackageFor(String kind, String value) {
+    switch ('$kind:$value') {
+      case 'storage:hive_ce':
+        return 'hive_ce_generator';
+      case 'assets:flutter_gen':
+        return 'flutter_gen_runner';
+      case 'codegen:freezed':
+        return 'freezed';
+    }
+    return null;
+  }
 }
 
 class PresetCatalog {
-  static final Map<String, StackConfig Function()> _presets = <String, StackConfig Function()>{
+  static final Map<String, StackConfig Function()> _presets =
+      <String, StackConfig Function()>{
     'cubit-clean': () => StackConfig(
           mode: 'new',
           architecture: 'feature_first_pragmatic_clean',

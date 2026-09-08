@@ -47,7 +47,7 @@ Future<void> runAgents(List<String> arguments) async {
         await _sync(root, command);
         return;
       case 'doctor':
-        await _doctor(root);
+        await _doctor(root, fix: command['fix'] == true);
         return;
       case 'status':
         _status(root);
@@ -133,7 +133,7 @@ ArgParser _buildParser() {
     ..addFlag('dry-run', negatable: false);
 
   parser.addCommand('detect');
-  parser.addCommand('doctor');
+  parser.addCommand('doctor')..addFlag('fix', negatable: false);
   parser.addCommand('status');
 
   parser.addCommand('uninstall')
@@ -181,6 +181,8 @@ ArgParser _buildParser() {
   ruleset.addCommand('list');
   ruleset.addCommand('add');
   ruleset.addCommand('use');
+  ruleset.addCommand('update');
+  ruleset.addCommand('profiles');
 
   final dependency = parser.addCommand('dependency');
   dependency.addCommand('plan');
@@ -246,6 +248,8 @@ Dynamic rulesets:
   agents ruleset add <name> <git-url-or-local-path>
   agents ruleset list
   agents ruleset use <name> <profile>
+  agents ruleset update <name>
+  agents ruleset profiles <name>
 
 Dependencies:
   agents dependency plan
@@ -333,6 +337,19 @@ Future<void> _ruleset(Directory root, ArgResults command) async {
         ..rulesetProfile = args[1];
       final report = await RuleGenerator().apply(root, config);
       _printGenerationReport(report);
+      return;
+    case 'update':
+      if (args.length != 1)
+        throw ArgumentError('Usage: agents ruleset update <name>');
+      await store.update(args.single);
+      stdout.writeln(
+          'Ruleset updated: ${args.single}. Run `agents sync` to apply it.');
+      return;
+    case 'profiles':
+      if (args.length != 1)
+        throw ArgumentError('Usage: agents ruleset profiles <name>');
+      for (final profile in store.profiles(args.single))
+        stdout.writeln(profile);
       return;
     default:
       throw ArgumentError('Usage: agents ruleset <add|list|use>');
@@ -616,7 +633,7 @@ Future<void> _sync(Directory root, ArgResults command) async {
   _printGenerationReport(report, dryRun: command['dry-run'] == true);
 }
 
-Future<void> _doctor(Directory root) async {
+Future<void> _doctor(Directory root, {bool fix = false}) async {
   final store = ManifestStore();
   final manifest = store.load(root);
   final detection = ProjectDetector().detect(root);
@@ -628,6 +645,12 @@ Future<void> _doctor(Directory root) async {
     stdout.writeln('✗ .agents-manifest missing or invalid');
     exitCode = 1;
     return;
+  }
+  if (fix) {
+    final report =
+        await RuleGenerator().apply(root, manifest.config, force: false);
+    stdout.writeln(
+        'Applied safe repair: ${report.created.length} file(s) restored; modified files preserved.');
   }
   stdout.writeln('✓ manifest v${manifest.version}');
 

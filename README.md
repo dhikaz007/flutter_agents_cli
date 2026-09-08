@@ -480,6 +480,17 @@ agents dependency add
 
 `add` installs only missing dependencies from the active profile. Existing projects require confirmation unless `--yes` is supplied. Remove a package with `agents dependency remove <package>`; the CLI protects packages required by the active profile unless `--force` is explicit.
 
+## Ruleset maintenance (v1.8)
+
+```bash
+agents ruleset profiles vibe-coding-rules
+agents ruleset update vibe-coding-rules
+agents sync
+agents doctor --fix
+```
+
+`update` refreshes the cached Git ruleset; `sync` applies its active profile to the project. `doctor --fix` restores only missing CLI-managed files and preserves user-modified files.
+
 ## Existing project safe adoption
 
 If `agents init` finds an existing `AGENTS.md` or Markdown files under `docs/`, it does not silently overwrite them. Interactive init asks how to continue:

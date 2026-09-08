@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.8.0
+- Added `agents ruleset update` and `agents ruleset profiles`.
+- Added `agents doctor --fix` for safe restoration of missing managed files while preserving modified files.
+
 ## 1.7.0
 
 ### Dependency management

@@ -60,6 +60,28 @@ class RulesetStore {
     return dir;
   }
 
+  Future<void> update(String name) async {
+    final target = directory(name);
+    if (!target.existsSync()) throw ArgumentError('Ruleset not found: $name');
+    final result = await Process.run('git', <String>['pull', '--ff-only'],
+        workingDirectory: target.path);
+    if (result.exitCode != 0)
+      throw StateError('Could not update ruleset: ${result.stderr}');
+  }
+
+  List<String> profiles(String name) {
+    final dir = directory(name);
+    final root = Directory(p.join(dir.path, 'profiles'));
+    if (!root.existsSync()) return <String>[];
+    final values = root
+        .listSync()
+        .whereType<Directory>()
+        .map((d) => p.basename(d.path))
+        .toList()
+      ..sort();
+    return values;
+  }
+
   String _safe(String value) =>
       value.trim().toLowerCase().replaceAll(RegExp(r'[^a-z0-9._-]+'), '-');
 }

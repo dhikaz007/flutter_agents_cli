@@ -190,6 +190,7 @@ ArgParser _buildParser() {
   ruleset.addCommand('update')..addFlag('apply', negatable: false);
   ruleset.addCommand('profiles');
   ruleset.addCommand('status');
+  ruleset.addCommand('diff');
   ruleset.addCommand('lock');
   ruleset.addCommand('verify');
   ruleset.addCommand('validate');
@@ -414,6 +415,41 @@ Future<void> _ruleset(Directory root, ArgResults command) async {
           : null;
       stdout.writeln(
           'Ruleset: ${args.single}\nRevision: $revision\nActive profile: ${active ?? '-'}');
+      return;
+    case 'diff':
+      if (args.length != 1)
+        throw ArgumentError('Usage: agents ruleset diff <name>');
+      final diff = await store.diff(args.single);
+      final manifest = ManifestStore().load(root);
+      final active = manifest?.config.ruleset == args.single
+          ? manifest!.config.rulesetProfile
+          : null;
+      stdout.writeln('Ruleset: ${args.single}');
+      stdout.writeln('Cached revision: ${diff.cachedRevision}');
+      stdout.writeln('Remote revision: ${diff.remoteRevision}');
+      if (!diff.hasChanges) {
+        stdout.writeln('No rule changes detected.');
+        return;
+      }
+      stdout.writeln('Changed files:');
+      for (final file in diff.files) stdout.writeln('- $file');
+      if (diff.changedProfiles.isNotEmpty) {
+        stdout.writeln('Changed profiles: ${diff.changedProfiles.join(', ')}');
+      }
+      if (diff.profilesWithMetadataChanges.isNotEmpty) {
+        stdout.writeln(
+          'Dependency metadata changed: ${diff.profilesWithMetadataChanges.join(', ')}.',
+        );
+      }
+      if (active != null && diff.changedProfiles.contains(active)) {
+        stdout.writeln('Active project profile affected: $active.');
+      }
+      stdout.writeln(
+          'Preview only. Run `agents ruleset update ${args.single} --apply` to apply changes.');
+      if (active != null && diff.profilesWithMetadataChanges.contains(active)) {
+        stdout.writeln(
+            'Then run `agents dependency plan` to review dependency impact.');
+      }
       return;
     case 'lock':
       final manifest = ManifestStore().load(root);

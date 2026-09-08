@@ -1,5 +1,8 @@
 # Changelog
 
+## 2.0.6
+- Added read-only `agents ruleset diff` to preview remote ruleset changes and active-profile dependency impact.
+
 ## 2.0.5
 - Added `agents ruleset validate` to check required profile documents and metadata before use.
 

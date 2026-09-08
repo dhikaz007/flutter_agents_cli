@@ -1,6 +1,7 @@
 # flutter-agents CLI v2.1.1
 
 [![CI](https://github.com/dhikaz007/flutter_agents_cli/actions/workflows/ci.yml/badge.svg)](https://github.com/dhikaz007/flutter_agents_cli/actions/workflows/ci.yml)
+[![Release](https://github.com/dhikaz007/flutter_agents_cli/actions/workflows/release.yml/badge.svg)](https://github.com/dhikaz007/flutter_agents_cli/actions/workflows/release.yml)
 
 Dynamic, project-aware, token-efficient AGENTS rule manager for Flutter projects.
 
@@ -25,6 +26,15 @@ agents init
 ```
 
 If the global executable is not on PATH, Dart will tell you the pub-cache bin path to add.
+
+## Release
+
+Push a version tag after CI is green to create a GitHub Release with generated release notes:
+
+```bash
+git tag v2.1.1
+git push origin v2.1.1
+```
 
 ## Main commands
 

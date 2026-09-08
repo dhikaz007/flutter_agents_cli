@@ -1,5 +1,8 @@
 # Changelog
 
+## 2.0.0
+- Added `agents migrate modular <from> <to> --dry-run` to scan legacy Modular API usage and generate a review checklist without modifying source.
+
 ## 1.9.0
 - Added `agents preset from-profile <name> <ruleset> <profile>`.
 - Ruleset profile metadata now supplies architecture, routing, and DI selections for generated presets.

@@ -9,6 +9,7 @@ import 'dependency_manager.dart';
 import 'detector.dart';
 import 'generator.dart';
 import 'manifest.dart';
+import 'migration_planner.dart';
 import 'models.dart';
 import 'preset_io.dart';
 import 'prompts.dart';
@@ -84,6 +85,9 @@ Future<void> runAgents(List<String> arguments) async {
         return;
       case 'dependency':
         await _dependency(root, command);
+        return;
+      case 'migrate':
+        _migrate(root, command);
         return;
       case 'version':
         stdout.writeln('flutter-agents $cliVersion');
@@ -193,6 +197,9 @@ ArgParser _buildParser() {
     ..addFlag('yes', abbr: 'y', negatable: false)
     ..addFlag('force', negatable: false);
 
+  final migrate = parser.addCommand('migrate');
+  migrate.addCommand('modular')..addFlag('dry-run', negatable: false);
+
   parser.addCommand('version');
   return parser;
 }
@@ -259,6 +266,9 @@ Dependencies:
   agents dependency add [package ...] [--yes]
   agents dependency remove <package> [--force] [--yes]
 
+Migration planning:
+  agents migrate modular <v5|v6|v7> <v5|v6|v7> --dry-run
+
 Other:
   agents version
 
@@ -267,6 +277,24 @@ Profile kinds:
   assets, codegen, loading-blocking, loading-list, loading-inline, pagination
 
 Use `agents context` to preview the minimum rule context for a coding task.''');
+}
+
+void _migrate(Directory root, ArgResults command) {
+  final sub = command.command;
+  if (sub?.name != 'modular' ||
+      sub!.rest.length != 2 ||
+      sub['dry-run'] != true) {
+    throw ArgumentError(
+        'Usage: agents migrate modular <v5|v6|v7> <v5|v6|v7> --dry-run');
+  }
+  final from = sub.rest[0];
+  final to = sub.rest[1];
+  if (!<String>{'v5', 'v6', 'v7'}.contains(from) ||
+      !<String>{'v5', 'v6', 'v7'}.contains(to) ||
+      from == to) {
+    throw ArgumentError('Choose two different versions from v5, v6, v7.');
+  }
+  stdout.writeln(MigrationPlanner().modularReport(root, from, to));
 }
 
 Future<void> _dependency(Directory root, ArgResults command) async {

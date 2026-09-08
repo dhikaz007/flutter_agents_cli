@@ -502,6 +502,16 @@ agents preset from-profile dhikaz-modular-v7 vibe-coding-rules flutter_modular_v
 agents init --preset dhikaz-modular-v7
 ```
 
+## Migration planning (v2.0)
+
+Preview the source areas that require review before a Flutter Modular major-version migration:
+
+```bash
+agents migrate modular v6 v7 --dry-run
+```
+
+This command only reports observed v5/v6/v7 APIs and a manual review checklist. It never edits source files or `pubspec.yaml`.
+
 ## Existing project safe adoption
 
 If `agents init` finds an existing `AGENTS.md` or Markdown files under `docs/`, it does not silently overwrite them. Interactive init asks how to continue:

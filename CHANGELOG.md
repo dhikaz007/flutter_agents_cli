@@ -1,5 +1,8 @@
 # Changelog
 
+## Unreleased
+- Updated the GitHub README with the v2.1 Dynamic Rules workflow and the complete ruleset command reference.
+
 ## 2.1.1
 - Synchronized the CLI manifest version with the package release and added regression coverage against version drift.
 

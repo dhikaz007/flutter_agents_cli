@@ -271,6 +271,15 @@ Dynamic rulesets:
   agents ruleset use <name> <profile>
   agents ruleset update <name>
   agents ruleset profiles <name>
+  agents ruleset validate <name>
+  agents ruleset diff <name>
+  agents ruleset status <name>
+  agents ruleset lock
+  agents ruleset verify
+  agents ruleset restore
+  agents ruleset audit
+  agents ruleset upgrade-plan
+  agents ruleset recommend [name]
 
 Dependencies:
   agents dependency plan

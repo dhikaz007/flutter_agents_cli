@@ -1,4 +1,4 @@
-# flutter-agents CLI v1.6.0
+# flutter-agents CLI v2.1.1
 
 Dynamic, project-aware, token-efficient AGENTS rule manager for Flutter projects.
 
@@ -480,7 +480,23 @@ agents dependency add
 
 `add` installs only missing dependencies from the active profile. Existing projects require confirmation unless `--yes` is supplied. Remove a package with `agents dependency remove <package>`; the CLI protects packages required by the active profile unless `--force` is explicit.
 
-## Ruleset maintenance (v1.8)
+## Dynamic Rules workflow (v2.1)
+
+For an existing project, this is the recommended safe flow. All commands through `upgrade-plan` are previews; only `ruleset use`, `update --apply`, dependency changes, and `restore` write files.
+
+```bash
+agents ruleset add vibe-coding-rules https://github.com/dhikaz007/vibe_coding_rules_dynamic.git
+agents init
+agents ruleset recommend vibe-coding-rules
+agents ruleset use vibe-coding-rules flutter_modular_v6
+agents dependency plan
+agents ruleset audit
+agents ruleset lock
+```
+
+Use the matching profile for Flutter Modular v5, v6, or v7. For GoRouter projects use `go_router_get_it`.
+
+### Ruleset maintenance
 
 ```bash
 agents ruleset profiles vibe-coding-rules

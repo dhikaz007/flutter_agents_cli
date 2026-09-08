@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.5.0
+
+### Context/cache optimization
+- Reworked generated `AGENTS.md` into an ALWAYS, CONDITIONAL BASE, and JUST IN TIME context router.
+- `PROJECT-STACK.md` and `ARCHITECTURE-ESSENTIAL.md` are no longer automatic context for trivial work.
+- `agents context` now classifies work by operation, so visual-only changes load UI rules without automatically loading security rules.
+- Security context is reserved for explicit credentials/tokens, auth flows, password rules, authorization, secure storage, and destructive/sensitive operations.
+- `PROJECT-RULES.md` and learned conventions remain user-owned references rather than globally required context.
+- Documented weighted billable context as the optimization target and added classifier regression coverage.
+
 ## 1.4.0
 
 ### Existing project safe adoption

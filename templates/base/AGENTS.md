@@ -5,18 +5,28 @@
 Tool-agnostic entry point for coding agents working in this Flutter project.
 The goal is correctness with minimum necessary context. **Do not preload unrelated rule files.**
 
-## Minimum context
+## Context router
 
-Before editing code, read only:
+Load context in layers. Start narrow; inspect the closest relevant files before any broad or recursive repository search. Keep terminal, test, and build output to only the useful lines.
+
+### ALWAYS
 
 1. this `AGENTS.md`
-2. `docs/PROJECT-STACK.md`
-3. `docs/ARCHITECTURE-ESSENTIAL.md`
-4. `docs/project/PROJECT-RULES.md` when it contains project-specific decisions relevant to the task
-5. `docs/project/IMPORTED-RULES.md` when present, then only the listed existing rule docs relevant to the task
-6. the relevant active `docs/custom-rules/<layer>.md` when listed in `PROJECT-STACK.md`
-7. the nearest comparable existing implementation
-8. the user's current requirement and any explicitly referenced project requirement/design/API section
+2. the user's current requirement and explicitly referenced design/API section
+3. the nearest comparable existing implementation
+
+### CONDITIONAL BASE
+
+- Read `docs/PROJECT-STACK.md` for a touched package, state, network, routing, DI, codegen, or multi-file feature concern.
+- Read `docs/ARCHITECTURE-ESSENTIAL.md` only for a new feature boundary, migration, architecture refactor, or cross-domain change.
+- Read `docs/project/PROJECT-RULES.md` only when the task references a project convention, a documented exception, or a relevant decision is discovered during narrow inspection.
+- Read `docs/project/IMPORTED-RULES.md` when present, then only its task-relevant entries.
+
+### JUST IN TIME
+
+- Read the relevant active `docs/custom-rules/<layer>.md` only after `PROJECT-STACK.md` identifies that touched layer.
+- Load the matching profile/rule below only when the implementation actually touches that concern.
+- Read only relevant API documentation sections; do not preload all API/project docs.
 
 Do not reread unchanged binding docs in the same task.
 
@@ -57,7 +67,7 @@ Load only the active profile/rule for a concern actually touched by the implemen
 - model codegen → active `docs/profiles/codegen/*.md`
 - pagination → active `docs/profiles/pagination/*.md`
 - UI/component work → `docs/rules/UI.md`
-- auth/secrets/tokens/mutations/sensitive storage → `docs/rules/SECURITY.md`
+- credentials/tokens/authentication or authorization flow/password rules/secure storage/destructive or sensitive operation → `docs/rules/SECURITY.md`
 - tests → `docs/rules/TESTING.md`
 - generation → `docs/rules/CODEGEN.md`
 - substantial feature/cross-domain/migration → `docs/rules/WORKFLOW.md`

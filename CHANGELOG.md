@@ -1,5 +1,8 @@
 # Changelog
 
+## 2.0.3
+- Dependency planning now reads package versions from the active ruleset profile metadata instead of hardcoded Modular versions.
+
 ## 2.0.2
 - Added `--output` for saving a Modular migration dry-run report as Markdown.
 

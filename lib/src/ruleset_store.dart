@@ -106,6 +106,18 @@ class RulesetStore {
     };
   }
 
+  Map<String, String> dependencies(String name, String profile) {
+    final file = File(p.join(
+        resolve(name, profile).path, 'profiles', profile, 'profile.yaml'));
+    if (!file.existsSync()) return <String, String>{};
+    final yaml = loadYaml(file.readAsStringSync());
+    if (yaml is! YamlMap || yaml['dependencies'] is! YamlMap)
+      return <String, String>{};
+    final values = yaml['dependencies'] as YamlMap;
+    return values
+        .map((key, value) => MapEntry(key.toString(), value.toString()));
+  }
+
   String _safe(String value) =>
       value.trim().toLowerCase().replaceAll(RegExp(r'[^a-z0-9._-]+'), '-');
 }

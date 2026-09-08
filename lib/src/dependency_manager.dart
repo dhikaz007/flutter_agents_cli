@@ -5,6 +5,7 @@ import 'package:yaml/yaml.dart';
 
 import 'models.dart';
 import 'registry.dart';
+import 'ruleset_store.dart';
 
 class DependencyManager {
   Set<String> installed(Directory root) {
@@ -30,12 +31,14 @@ class DependencyManager {
           ProfileRegistry.packageFor(parts.first, parts.sublist(1).join(':'));
       if (package != null) values.addAll(package.split('|'));
     }
-    if (config.rulesetProfile == 'flutter_modular_v5')
-      values.add('flutter_modular:^5.0.3');
-    if (config.rulesetProfile == 'flutter_modular_v6')
-      values.add('flutter_modular:^6.4.1');
-    if (config.rulesetProfile == 'flutter_modular_v7')
-      values.add('flutter_modular:^7.1.0');
+    if (config.ruleset != null && config.rulesetProfile != null) {
+      for (final entry in RulesetStore()
+          .dependencies(config.ruleset!, config.rulesetProfile!)
+          .entries) {
+        values.removeWhere((value) => value.split(':').first == entry.key);
+        values.add('${entry.key}:${entry.value}');
+      }
+    }
     return values.toList()..sort();
   }
 

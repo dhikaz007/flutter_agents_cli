@@ -195,6 +195,7 @@ ArgParser _buildParser() {
   ruleset.addCommand('verify');
   ruleset.addCommand('restore');
   ruleset.addCommand('audit');
+  ruleset.addCommand('upgrade-plan');
   ruleset.addCommand('validate');
 
   final dependency = parser.addCommand('dependency');
@@ -593,6 +594,58 @@ Future<void> _ruleset(Directory root, ArgResults command) async {
       } else {
         stdout.writeln('Audit passed.');
       }
+      return;
+    case 'upgrade-plan':
+      if (args.isNotEmpty) {
+        throw ArgumentError('Usage: agents ruleset upgrade-plan');
+      }
+      final manifest = ManifestStore().load(root);
+      if (manifest?.config.ruleset == null ||
+          manifest?.config.rulesetProfile == null) {
+        throw StateError('This project has no active ruleset profile.');
+      }
+      final name = manifest!.config.ruleset!;
+      final profile = manifest.config.rulesetProfile!;
+      final diff = await store.diff(name);
+      stdout.writeln('Ruleset upgrade plan');
+      stdout.writeln('Ruleset: $name');
+      stdout.writeln('Active profile: $profile');
+      stdout.writeln('Cached revision: ${diff.cachedRevision}');
+      stdout.writeln('Remote revision: ${diff.remoteRevision}');
+      if (!diff.hasChanges) {
+        stdout.writeln('No ruleset update is available.');
+        return;
+      }
+      final relevantFiles = diff.files
+          .where((file) =>
+              file.startsWith('rules/') ||
+              file.startsWith('profiles/$profile/'))
+          .toList();
+      stdout.writeln('Affected rule documents:');
+      if (relevantFiles.isEmpty) {
+        stdout.writeln('- No universal or active-profile documents changed.');
+      } else {
+        for (final file in relevantFiles) stdout.writeln('- $file');
+      }
+      final dependencyChanges = diff.dependencyChanges[profile] ?? <String>[];
+      if (dependencyChanges.isNotEmpty) {
+        stdout.writeln('Profile dependency changes:');
+        for (final change in dependencyChanges) stdout.writeln('- $change');
+      } else {
+        stdout.writeln('Profile dependency changes: none.');
+      }
+      stdout.writeln('Recommended sequence:');
+      stdout.writeln('1. Review with `agents ruleset diff $name`.');
+      stdout.writeln('2. Apply with `agents ruleset update $name --apply`.');
+      if (dependencyChanges.isNotEmpty) {
+        stdout.writeln(
+            '3. Run `agents dependency plan`, then add only approved packages.');
+      } else {
+        stdout.writeln(
+            '3. Run `agents ruleset lock` after confirming the update.');
+      }
+      stdout.writeln(
+          '4. Run the project verification, including `flutter analyze`.');
       return;
     case 'validate':
       if (args.length != 1)

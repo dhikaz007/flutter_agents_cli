@@ -1,5 +1,8 @@
 # Changelog
 
+## 2.0.9
+- Added read-only `agents ruleset upgrade-plan` with active-profile rule and dependency change checklists.
+
 ## 2.0.8
 - Added read-only `agents ruleset audit` for active-profile, lock, managed-file, remote-update, and dependency health checks.
 

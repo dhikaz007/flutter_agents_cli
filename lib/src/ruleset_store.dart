@@ -10,11 +10,13 @@ class RulesetDiff {
     required this.cachedRevision,
     required this.remoteRevision,
     required this.files,
+    required this.dependencyChanges,
   });
 
   final String cachedRevision;
   final String remoteRevision;
   final List<String> files;
+  final Map<String, List<String>> dependencyChanges;
 
   bool get hasChanges => files.isNotEmpty;
 
@@ -188,10 +190,31 @@ class RulesetStore {
           .where((path) => !path.startsWith('.git${p.separator}'))
           .toList()
         ..sort();
+      final dependencyChanges = <String, List<String>>{};
+      final profileNames = <String>{
+        ..._profilesAt(target),
+        ..._profilesAt(clone),
+      };
+      for (final profile in profileNames) {
+        final before = _dependenciesAt(target, profile);
+        final after = _dependenciesAt(clone, profile);
+        final changed = <String>[];
+        for (final package in <String>{...before.keys, ...after.keys}) {
+          if (before[package] != after[package]) {
+            changed.add(
+                '$package: ${before[package] ?? '-'} -> ${after[package] ?? '-'}');
+          }
+        }
+        if (changed.isNotEmpty) {
+          changed.sort();
+          dependencyChanges[profile] = changed;
+        }
+      }
       return RulesetDiff(
         cachedRevision: cachedRevision,
         remoteRevision: remoteRevision,
         files: files,
+        dependencyChanges: dependencyChanges,
       );
     } finally {
       temp.deleteSync(recursive: true);
@@ -296,5 +319,27 @@ class RulesetStore {
       }
     }
     return path;
+  }
+
+  Set<String> _profilesAt(Directory root) {
+    final directory = Directory(p.join(root.path, 'profiles'));
+    if (!directory.existsSync()) return <String>{};
+    return directory
+        .listSync()
+        .whereType<Directory>()
+        .map((item) => p.basename(item.path))
+        .toSet();
+  }
+
+  Map<String, String> _dependenciesAt(Directory root, String profile) {
+    final file = File(p.join(root.path, 'profiles', profile, 'profile.yaml'));
+    if (!file.existsSync()) return <String, String>{};
+    final yaml = loadYaml(file.readAsStringSync());
+    if (yaml is! YamlMap || yaml['dependencies'] is! YamlMap) {
+      return <String, String>{};
+    }
+    final dependencies = yaml['dependencies'] as YamlMap;
+    return dependencies
+        .map((key, value) => MapEntry(key.toString(), value.toString()));
   }
 }

@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:path/path.dart' as p;
+import 'package:yaml/yaml.dart';
 
 import 'rule_store.dart';
 
@@ -80,6 +81,18 @@ class RulesetStore {
         .toList()
       ..sort();
     return values;
+  }
+
+  Map<String, String> metadata(String name, String profile) {
+    final file = File(p.join(
+        resolve(name, profile).path, 'profiles', profile, 'profile.yaml'));
+    if (!file.existsSync()) return <String, String>{};
+    final yaml = loadYaml(file.readAsStringSync());
+    if (yaml is! YamlMap) return <String, String>{};
+    return <String, String>{
+      for (final key in <String>['architecture', 'routing', 'di'])
+        if (yaml[key] != null) key: yaml[key].toString(),
+    };
   }
 
   String _safe(String value) =>

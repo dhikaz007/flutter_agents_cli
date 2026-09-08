@@ -158,6 +158,7 @@ ArgParser _buildParser() {
   preset.addCommand('unset');
   preset.addCommand('save')..addFlag('force', negatable: false);
   preset.addCommand('delete')..addFlag('yes', abbr: 'y', negatable: false);
+  preset.addCommand('from-profile');
 
   parser.addCommand('explain');
   parser.addCommand('context');
@@ -229,6 +230,7 @@ Presets:
   agents preset save <name> [--force]
   agents preset delete <name>
   agents preset export <file.yaml>
+  agents preset from-profile <name> <ruleset> <profile>
 
 Token/context:
   agents context "task description"
@@ -913,6 +915,35 @@ void _preset(Directory root, ArgResults command) {
     }
     _printConfig(document.config);
     stdout.writeln('Type: built-in preset');
+    return;
+  }
+
+  if (sub.name == 'from-profile') {
+    if (sub.rest.length != 3) {
+      stderr.writeln(
+          'Usage: agents preset from-profile <name> <ruleset> <profile>');
+      exitCode = 64;
+      return;
+    }
+    final name = sub.rest[0];
+    final ruleset = sub.rest[1];
+    final profile = sub.rest[2];
+    final metadata = RulesetStore().metadata(ruleset, profile);
+    final config = StackConfig(mode: 'new')
+      ..ruleset = ruleset
+      ..rulesetProfile = profile
+      ..architecture = metadata['architecture']
+      ..routing = metadata['routing']
+      ..di = metadata['di'];
+    final document = PresetDocument(
+      config: config,
+      fields: <String>{'mode', 'ruleset', 'rulesetProfile', ...metadata.keys},
+      ruleLayers: <String>{},
+      name: name,
+    );
+    final target = io.userFile(name);
+    io.saveUserDocument(name, document, overwrite: target.existsSync());
+    stdout.writeln('Saved profile preset: ${target.path}');
     return;
   }
 

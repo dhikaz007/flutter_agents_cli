@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.9.0
+- Added `agents preset from-profile <name> <ruleset> <profile>`.
+- Ruleset profile metadata now supplies architecture, routing, and DI selections for generated presets.
+
 ## 1.8.0
 - Added `agents ruleset update` and `agents ruleset profiles`.
 - Added `agents doctor --fix` for safe restoration of missing managed files while preserving modified files.

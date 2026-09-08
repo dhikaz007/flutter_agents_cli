@@ -491,6 +491,15 @@ agents doctor --fix
 
 `update` refreshes the cached Git ruleset; `sync` applies its active profile to the project. `doctor --fix` restores only missing CLI-managed files and preserves user-modified files.
 
+## Profile presets (v1.9)
+
+Create a reusable preset from a ruleset profile without writing YAML by hand:
+
+```bash
+agents preset from-profile dhikaz-modular-v7 vibe-coding-rules flutter_modular_v7
+agents init --preset dhikaz-modular-v7
+```
+
 ## Existing project safe adoption
 
 If `agents init` finds an existing `AGENTS.md` or Markdown files under `docs/`, it does not silently overwrite them. Interactive init asks how to continue:

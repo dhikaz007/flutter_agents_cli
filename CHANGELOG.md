@@ -1,5 +1,8 @@
 # Changelog
 
+## 2.0.1
+- Added regression coverage for Flutter Modular v5/v6/v7 migration planning.
+
 ## 2.0.0
 - Added `agents migrate modular <from> <to> --dry-run` to scan legacy Modular API usage and generate a review checklist without modifying source.
 

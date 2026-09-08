@@ -70,6 +70,17 @@ class RulesetStore {
       throw StateError('Could not update ruleset: ${result.stderr}');
   }
 
+  Future<String> revision(String name) async {
+    final target = directory(name);
+    if (!target.existsSync()) throw ArgumentError('Ruleset not found: $name');
+    final result = await Process.run(
+        'git', <String>['rev-parse', '--short', 'HEAD'],
+        workingDirectory: target.path);
+    if (result.exitCode != 0)
+      throw StateError('Could not read ruleset revision.');
+    return result.stdout.toString().trim();
+  }
+
   List<String> profiles(String name) {
     final dir = directory(name);
     final root = Directory(p.join(dir.path, 'profiles'));

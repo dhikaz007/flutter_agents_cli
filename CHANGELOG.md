@@ -3,6 +3,7 @@
 ## 1.9.0
 - Added `agents preset from-profile <name> <ruleset> <profile>`.
 - Ruleset profile metadata now supplies architecture, routing, and DI selections for generated presets.
+- Added `agents ruleset status` and `agents ruleset update --apply`.
 
 ## 1.8.0
 - Added `agents ruleset update` and `agents ruleset profiles`.

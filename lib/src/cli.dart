@@ -182,8 +182,9 @@ ArgParser _buildParser() {
   ruleset.addCommand('list');
   ruleset.addCommand('add');
   ruleset.addCommand('use');
-  ruleset.addCommand('update');
+  ruleset.addCommand('update')..addFlag('apply', negatable: false);
   ruleset.addCommand('profiles');
+  ruleset.addCommand('status');
 
   final dependency = parser.addCommand('dependency');
   dependency.addCommand('plan');
@@ -344,14 +345,34 @@ Future<void> _ruleset(Directory root, ArgResults command) async {
       if (args.length != 1)
         throw ArgumentError('Usage: agents ruleset update <name>');
       await store.update(args.single);
-      stdout.writeln(
-          'Ruleset updated: ${args.single}. Run `agents sync` to apply it.');
+      if (sub?['apply'] == true) {
+        final manifest = ManifestStore().load(root);
+        if (manifest == null || manifest.config.ruleset != args.single) {
+          throw StateError('This project is not using ruleset ${args.single}.');
+        }
+        final report = await RuleGenerator().apply(root, manifest.config);
+        _printGenerationReport(report);
+      } else {
+        stdout.writeln(
+            'Ruleset updated: ${args.single}. Run `agents sync` to apply it.');
+      }
       return;
     case 'profiles':
       if (args.length != 1)
         throw ArgumentError('Usage: agents ruleset profiles <name>');
       for (final profile in store.profiles(args.single))
         stdout.writeln(profile);
+      return;
+    case 'status':
+      if (args.length != 1)
+        throw ArgumentError('Usage: agents ruleset status <name>');
+      final revision = await store.revision(args.single);
+      final manifest = ManifestStore().load(root);
+      final active = manifest?.config.ruleset == args.single
+          ? manifest!.config.rulesetProfile
+          : null;
+      stdout.writeln(
+          'Ruleset: ${args.single}\nRevision: $revision\nActive profile: ${active ?? '-'}');
       return;
     default:
       throw ArgumentError('Usage: agents ruleset <add|list|use>');

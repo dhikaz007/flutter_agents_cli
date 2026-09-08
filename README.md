@@ -485,6 +485,8 @@ agents dependency add
 ```bash
 agents ruleset profiles vibe-coding-rules
 agents ruleset update vibe-coding-rules
+agents ruleset status vibe-coding-rules
+agents ruleset update vibe-coding-rules --apply
 agents sync
 agents doctor --fix
 ```

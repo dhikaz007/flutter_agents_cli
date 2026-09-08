@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:args/args.dart';
@@ -189,6 +190,8 @@ ArgParser _buildParser() {
   ruleset.addCommand('update')..addFlag('apply', negatable: false);
   ruleset.addCommand('profiles');
   ruleset.addCommand('status');
+  ruleset.addCommand('lock');
+  ruleset.addCommand('verify');
 
   final dependency = parser.addCommand('dependency');
   dependency.addCommand('plan');
@@ -410,6 +413,38 @@ Future<void> _ruleset(Directory root, ArgResults command) async {
           : null;
       stdout.writeln(
           'Ruleset: ${args.single}\nRevision: $revision\nActive profile: ${active ?? '-'}');
+      return;
+    case 'lock':
+      final manifest = ManifestStore().load(root);
+      if (manifest?.config.ruleset == null ||
+          manifest?.config.rulesetProfile == null) {
+        throw StateError('Select a ruleset profile before locking it.');
+      }
+      final name = manifest!.config.ruleset!;
+      final file = File(p.join(root.path, 'RULESET_LOCK.json'));
+      file.writeAsStringSync(
+          const JsonEncoder.withIndent('  ').convert(<String, String>{
+        'ruleset': name,
+        'profile': manifest.config.rulesetProfile!,
+        'revision': await store.revision(name),
+      }));
+      stdout.writeln('Ruleset locked: ${file.path}');
+      return;
+    case 'verify':
+      final file = File(p.join(root.path, 'RULESET_LOCK.json'));
+      if (!file.existsSync())
+        throw StateError(
+            'RULESET_LOCK.json not found. Run `agents ruleset lock`.');
+      final lock = jsonDecode(file.readAsStringSync()) as Map<String, dynamic>;
+      final name = lock['ruleset']?.toString();
+      final expected = lock['revision']?.toString();
+      if (name == null || expected == null)
+        throw StateError('Invalid RULESET_LOCK.json.');
+      final actual = await store.revision(name);
+      if (actual != expected)
+        throw StateError(
+            'Ruleset revision mismatch: locked $expected, cache $actual.');
+      stdout.writeln('Ruleset verified: $name@$actual');
       return;
     default:
       throw ArgumentError('Usage: agents ruleset <add|list|use>');

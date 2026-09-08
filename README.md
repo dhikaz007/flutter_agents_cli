@@ -487,6 +487,8 @@ agents ruleset profiles vibe-coding-rules
 agents ruleset update vibe-coding-rules
 agents ruleset status vibe-coding-rules
 agents ruleset update vibe-coding-rules --apply
+agents ruleset lock
+agents ruleset verify
 agents sync
 agents doctor --fix
 ```

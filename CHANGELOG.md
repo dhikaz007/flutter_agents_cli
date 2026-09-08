@@ -1,5 +1,8 @@
 # Changelog
 
+## 2.0.4
+- Added `agents ruleset lock` and `agents ruleset verify` for reproducible ruleset revisions.
+
 ## 2.0.3
 - Dependency planning now reads package versions from the active ruleset profile metadata instead of hardcoded Modular versions.
 

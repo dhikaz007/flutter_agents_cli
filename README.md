@@ -523,6 +523,7 @@ agents ruleset restore
 agents ruleset audit
 agents ruleset upgrade-plan
 agents ruleset recommend vibe-coding-rules
+agents style audit
 agents sync
 agents doctor --fix
 ```

@@ -1,5 +1,8 @@
 # Changelog
 
+## 2.1.3
+- Added read-only `agents style audit` for Dynamic Rules presentation-style findings.
+
 ## 2.1.2
 - Added Dynamic Rules `dev_dependencies` support to dependency planning and installation.
 

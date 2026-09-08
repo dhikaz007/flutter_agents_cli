@@ -17,6 +17,7 @@ import 'prompts.dart';
 import 'registry.dart';
 import 'rule_store.dart';
 import 'ruleset_store.dart';
+import 'style_auditor.dart';
 
 Future<void> runAgents(List<String> arguments) async {
   final parser = _buildParser();
@@ -92,6 +93,9 @@ Future<void> runAgents(List<String> arguments) async {
         return;
       case 'version':
         stdout.writeln('flutter-agents $cliVersion');
+        return;
+      case 'style':
+        _style(root, command);
         return;
     }
   } catch (error, stack) {
@@ -212,7 +216,24 @@ ArgParser _buildParser() {
     ..addOption('output', help: 'Write the Markdown report to this path.');
 
   parser.addCommand('version');
+  final style = parser.addCommand('style');
+  style.addCommand('audit');
   return parser;
+}
+
+void _style(Directory root, ArgResults command) {
+  if (command.command?.name != 'audit') {
+    throw ArgumentError('Usage: agents style audit');
+  }
+  final findings = StyleAuditor().audit(root);
+  if (findings.isEmpty) {
+    stdout.writeln('Style audit passed.');
+    return;
+  }
+  stdout.writeln('Style audit: ${findings.length} finding(s)');
+  for (final finding in findings) {
+    stdout.writeln('${finding.path}:${finding.line} ${finding.message}');
+  }
 }
 
 void _usage() {

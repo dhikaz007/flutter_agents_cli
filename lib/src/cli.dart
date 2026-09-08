@@ -601,8 +601,18 @@ Future<void> _ruleset(Directory root, ArgResults command) async {
             break;
         }
       }
+      final dynamicDirectory =
+          Directory(p.join(root.path, 'docs/dynamic-rules'));
+      final copiedRules = dynamicDirectory.existsSync()
+          ? dynamicDirectory
+              .listSync(recursive: true)
+              .whereType<File>()
+              .where((file) => p.extension(file.path) == '.md')
+              .length
+          : 0;
       stdout.writeln(
-          'Managed dynamic files: $modified modified, $missing missing.');
+        'Managed dynamic files: $copiedRules copied, $modified modified, $missing missing.',
+      );
 
       final diff = await store.diff(name);
       stdout.writeln(diff.hasChanges

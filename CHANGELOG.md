@@ -1,5 +1,8 @@
 # Changelog
 
+## 2.1.5
+- Fixed Ruleset diff and audit reporting for copied Dynamic Rules files.
+
 ## 2.1.4
 - Corrected dependency planning for `hive_ce`, `hive_ce_flutter`, `hive_ce_generator`, and `flutter_gen_runner`.
 

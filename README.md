@@ -1,4 +1,4 @@
-# flutter-agents CLI v1.3.0
+# flutter-agents CLI v1.5.0
 
 Dynamic, project-aware, token-efficient AGENTS rule manager for Flutter projects.
 

@@ -6,7 +6,6 @@ import 'package:path/path.dart' as p;
 
 import 'manifest.dart';
 import 'models.dart';
-import 'registry.dart';
 import 'rule_store.dart';
 import 'rule_mapper.dart';
 import 'ruleset_store.dart';
@@ -134,19 +133,6 @@ class RuleGenerator {
 
     desired['docs/PROJECT-STACK.md'] = utf8.encode(_projectStack(config));
 
-    for (final key in config.profileKeys.toSet()) {
-      final parts = key.split(':');
-      final kind = parts.first;
-      final name = parts.sublist(1).join(':');
-      final sourceKind = kind.startsWith('loading-') ? 'loading' : kind;
-      final source = File(
-        p.join(templates.path, 'profiles', sourceKind, '$name.md'),
-      );
-      if (!source.existsSync()) continue;
-      desired[ProfileRegistry.profilePath(kind, name)] =
-          source.readAsBytesSync();
-    }
-
     final userRules = UserRuleStore();
     for (final entry in config.rules.entries) {
       if (entry.value == 'default') continue;
@@ -163,6 +149,21 @@ class RuleGenerator {
         'profile: ${config.rulesetProfile}\n',
       );
       final mapper = RuleMapper();
+      if (config.mode == 'new') {
+        final profileDir = Directory(
+          p.join(root.path, 'profiles', config.rulesetProfile!),
+        );
+        if (profileDir.existsSync()) {
+          for (final entity in profileDir.listSync(recursive: true)) {
+            if (entity is! File ||
+                p.extension(entity.path).toLowerCase() != '.md') {
+              continue;
+            }
+            final rel = p.relative(entity.path, from: root.path);
+            desired['docs/dynamic-rules/$rel'] = entity.readAsBytesSync();
+          }
+        }
+      }
       final sourceDir = Directory(p.join(root.path, 'rules'));
       if (sourceDir.existsSync()) {
         for (final concern in config.dynamicRules) {

@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out CLI
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Dart
         uses: dart-lang/setup-dart@v1
@@ -41,10 +41,10 @@ jobs:
           - flutter_modular_v7
     steps:
       - name: Check out CLI
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Check out Dynamic Rules
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: dhikaz007/vibe_coding_rules_dynamic
           path: vibe_coding_rules_dynamic
@@ -69,5 +69,6 @@ jobs:
           dart run "$GITHUB_WORKSPACE/bin/agents.dart" ruleset use vibe-coding-rules "$PROFILE"
           test -f PROJECT_PROFILE.md
           grep -Fx "profile: $PROFILE" PROJECT_PROFILE.md
-          test -f "docs/dynamic-rules/profiles/$PROFILE/ARCHITECTURE.md"
-          grep -q "docs/dynamic-rules" AGENTS.md
+          test -f docs/RULES-MAP.md
+          test ! -e "docs/dynamic-rules/profiles/$PROFILE/ARCHITECTURE.md"
+          dart run "$GITHUB_WORKSPACE/bin/agents.dart" ruleset map --review

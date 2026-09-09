@@ -567,6 +567,8 @@ agents doctor --fix
 
 `dependency plan` and `dependency add` now preserve the distinction between runtime and dev dependencies defined by the active profile. `validate` checks required documents and required `profile.yaml` metadata. `recommend` suggests a compatible available profile from an existing project's dependencies without applying it. `diff` is read-only: it previews files, changed profiles, and active-profile dependency metadata before an update. `upgrade-plan` turns the remote diff into a review checklist for the active profile, including exact profile dependency changes. `lock` writes the exact full Git revision currently in use; `restore` returns the cache and generated dynamic rules to that locked revision. `audit` gives a single read-only health report for the selected profile, lock, managed files, remote changes, and required dependencies. `update` refreshes the cached Git ruleset; `sync` applies its active profile to the project. `doctor --fix` restores only missing CLI-managed files and preserves user-modified files.
 
+CI also runs a smoke matrix for all supported Dynamic Rules profiles. The smoke test verifies profile selection and the generated rule map without requiring a full Dynamic Rules bundle to be copied into an existing project.
+
 ## Profile presets (v1.9)
 
 Create a reusable preset from a ruleset profile without writing YAML by hand:

@@ -469,7 +469,7 @@ agents init
 agents ruleset use vibe-coding-rules go_router_get_it
 ```
 
-For Flutter Modular projects, choose the matching `flutter_modular_v5`, `flutter_modular_v6`, or `flutter_modular_v7` profile. `ruleset use` writes `PROJECT_PROFILE.md`, but does not copy generic Dynamic Rules into an existing project. Do not combine profiles in one project.
+For Flutter Modular projects, choose the matching `flutter_modular_v5`, `flutter_modular_v6`, or `flutter_modular_v7` profile. `ruleset use` writes `PROJECT_PROFILE.md`. New projects receive the selected profile under `docs/dynamic-rules/`; existing projects keep their mapped project rules unless a Dynamic Rule is explicitly selected. Do not combine profiles in one project.
 
 Presets remain supported. A preset can store `ruleset` and `rulesetProfile` alongside existing stack fields:
 
@@ -520,6 +520,9 @@ documents under `docs/`, maps recognizable concerns by filename first and then
 by heading/content, and writes the result to `docs/RULES-MAP.md`. It never
 overwrites a mapped project document. Review ambiguous candidates before
 writing the map:
+
+The CLI does not generate `docs/profiles/`. For a new project, stack-specific
+rules live under the selected Dynamic Rules profile in `docs/dynamic-rules/`.
 
 ```bash
 agents ruleset map --review

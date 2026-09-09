@@ -65,10 +65,11 @@ jobs:
           project="$RUNNER_TEMP/profile-smoke-$PROFILE"
           mkdir -p "$project"
           cd "$project"
-          dart run "$GITHUB_WORKSPACE/bin/agents.dart" init --yes
+          dart run "$GITHUB_WORKSPACE/bin/agents.dart" init --mode new --yes
           dart run "$GITHUB_WORKSPACE/bin/agents.dart" ruleset use vibe-coding-rules "$PROFILE"
           test -f PROJECT_PROFILE.md
           grep -Fx "profile: $PROFILE" PROJECT_PROFILE.md
           test -f docs/RULES-MAP.md
-          test ! -e "docs/dynamic-rules/profiles/$PROFILE/ARCHITECTURE.md"
+          test -f "docs/dynamic-rules/profiles/$PROFILE/ARCHITECTURE.md"
+          test ! -d docs/profiles
           dart run "$GITHUB_WORKSPACE/bin/agents.dart" ruleset map --review

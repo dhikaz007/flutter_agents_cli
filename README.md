@@ -1,4 +1,4 @@
-# flutter-agents CLI v2.1.6
+# flutter-agents CLI v2.1.7
 
 [![CI](https://github.com/dhikaz007/flutter_agents_cli/actions/workflows/ci.yml/badge.svg)](https://github.com/dhikaz007/flutter_agents_cli/actions/workflows/ci.yml)
 [![Release](https://github.com/dhikaz007/flutter_agents_cli/actions/workflows/release.yml/badge.svg)](https://github.com/dhikaz007/flutter_agents_cli/actions/workflows/release.yml)
@@ -521,6 +521,12 @@ by heading/content, and writes the result to `docs/RULES-MAP.md`. It never
 overwrites a mapped project document. Review ambiguous candidates before
 writing the map:
 
+`agents init` is scan-first for existing projects: it detects the stack and
+maps existing rules without repeating the full configuration questionnaire.
+For an empty project, selecting Dynamic Rules automatically downloads the
+official `vibe_coding_rules_dynamic` repository and caches it locally. A custom
+ruleset can still be added with `agents ruleset add`.
+
 The CLI does not generate `docs/profiles/`. For a new project, stack-specific
 rules live under the selected Dynamic Rules profile in `docs/dynamic-rules/`.
 
@@ -542,7 +548,10 @@ agents ruleset apply vibe-coding-rules ui pagination
 The command asks before changing a mapped concern from `project` to `dynamic`.
 Only selected documents are copied into `docs/dynamic-rules/`; the original
 project rule remains untouched. `agents ruleset audit` reports the active
-source for each concern.
+project rule remains untouched. When both sources are selected for one concern,
+the CLI also creates a managed `docs/dynamic-rules/merged/<concern>.md` view
+with project rules first and Dynamic Rules second. `agents ruleset audit`
+reports the active source for each concern.
 
 ### Ruleset maintenance
 

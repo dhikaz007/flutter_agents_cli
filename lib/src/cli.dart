@@ -20,6 +20,19 @@ import 'ruleset_store.dart';
 import 'rule_mapper.dart';
 import 'style_auditor.dart';
 
+const String defaultRulesetName = 'vibe-coding-rules';
+const String defaultRulesetUrl =
+    'https://github.com/dhikaz007/vibe_coding_rules_dynamic.git';
+const List<String> universalDynamicConcerns = <String>[
+  'codegen',
+  'network',
+  'security',
+  'state-management',
+  'testing',
+  'ui',
+  'workflow',
+];
+
 Future<void> runAgents(List<String> arguments) async {
   final parser = _buildParser();
   ArgResults parsed;
@@ -115,6 +128,11 @@ ArgParser _buildParser() {
       help: 'Built-in preset name or path to a preset YAML file.',
     )
     ..addOption('mode', allowed: <String>['existing', 'new'])
+    ..addOption('ruleset',
+        help:
+            'Ruleset name; defaults to the official Dynamic Rules bundle for new projects.')
+    ..addOption('profile', help: 'Dynamic Rules profile for a new project.')
+    ..addOption('rule-source', allowed: <String>['dynamic', 'template', 'skip'])
     ..addOption(
       'adopt',
       allowed: <String>['keep', 'import', 'merge', 'replace', 'cancel'],
@@ -942,10 +960,28 @@ Future<void> _init(Directory root, ArgResults command) async {
   }
 
   _printDetection(detected);
-  if (command['yes'] != true) {
-    config.mode = chooseMode(config.mode);
-    config = _configure(config);
-    if (!confirm('\nGenerate adaptive AGENTS rules in ${root.path}?')) return;
+  final existingProject = existing.found;
+  if (!existingProject) {
+    config.mode = modeArg ?? 'new';
+    if (command['yes'] != true) {
+      final source = command['rule-source'] as String? ??
+          choose('Rule source', <String>['dynamic', 'template', 'skip'],
+              detected: 'dynamic', allowNone: false);
+      if (source == 'dynamic') {
+        final rulesetName = command['ruleset'] as String? ?? defaultRulesetName;
+        final rulesetStore = RulesetStore();
+        await _ensureDefaultRuleset(rulesetStore, rulesetName);
+        final profile = command['profile'] as String? ??
+            _ensureAndChooseRulesetProfile(rulesetStore, rulesetName);
+        config.ruleset = rulesetName;
+        config.rulesetProfile = profile;
+        config.dynamicRules = universalDynamicConcerns.toList();
+      }
+    }
+  } else {
+    // Existing projects are scan-first: detected conventions and mapped
+    // project rules are used without the old stack questionnaire.
+    config.mode = 'existing';
   }
 
   final dryRun = command['dry-run'] == true;
@@ -1001,6 +1037,24 @@ Future<void> _init(Directory root, ArgResults command) async {
     }
     stdout.writeln('\nRun `agents doctor` to verify consistency.');
   }
+}
+
+Future<void> _ensureDefaultRuleset(RulesetStore store, String name) async {
+  if (store.list().contains(name)) return;
+  if (name != defaultRulesetName) {
+    throw StateError(
+        'Ruleset $name is not cached. Add it with `agents ruleset add`.');
+  }
+  stdout.writeln('Downloading official Dynamic Rules: $defaultRulesetName');
+  await store.add(name, defaultRulesetUrl);
+}
+
+String _ensureAndChooseRulesetProfile(RulesetStore store, String name) {
+  final profiles = store.profiles(name);
+  if (profiles.isEmpty) throw StateError('Ruleset has no profiles: $name');
+  return choose('Dynamic Rules profile', profiles,
+          detected: profiles.first, allowNone: false) ??
+      profiles.first;
 }
 
 StackConfig _configure(StackConfig c) {

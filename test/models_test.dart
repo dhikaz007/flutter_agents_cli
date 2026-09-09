@@ -9,6 +9,8 @@ void main() {
       state: 'flutter_bloc',
       routing: 'go_router',
       uiComponents: const {'Button': 'AppButton'},
+      ruleMappings: const {'ui': 'project:docs/rules/UI.md'},
+      dynamicRules: const ['pagination'],
     );
     final restored = StackConfig.fromJson(original.toJson());
     expect(restored.mode, original.mode);
@@ -16,5 +18,7 @@ void main() {
     expect(restored.state, original.state);
     expect(restored.routing, original.routing);
     expect(restored.uiComponents['Button'], 'AppButton');
+    expect(restored.ruleMappings['ui'], 'project:docs/rules/UI.md');
+    expect(restored.dynamicRules, ['pagination']);
   });
 }

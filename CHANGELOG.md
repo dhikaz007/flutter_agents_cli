@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.1.6
+
+- Map existing project rule documents by concern without overwriting them.
+- Make Dynamic Rules opt-in per concern instead of copying the full bundle.
+- Add rule-map review, selection, audit integration, and explicit AGENTS link support.
+
 ## 2.1.5
 - Fixed Ruleset diff and audit reporting for copied Dynamic Rules files.
 

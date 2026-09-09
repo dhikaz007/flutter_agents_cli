@@ -22,6 +22,8 @@ class StackConfig {
     this.rules = const <String, String>{},
     this.ruleset,
     this.rulesetProfile,
+    this.ruleMappings = const <String, String>{},
+    this.dynamicRules = const <String>[],
   });
 
   String mode;
@@ -44,41 +46,49 @@ class StackConfig {
   List<String> observedStructure;
   Map<String, String> uiComponents;
   Map<String, String>
-  rules; // layer -> custom rule name; absent means CLI default
+      rules; // layer -> custom rule name; absent means CLI default
   String? ruleset;
   String? rulesetProfile;
+
+  /// concern -> `project:<relative path>` or `dynamic:<relative path>`.
+  Map<String, String> ruleMappings;
+  List<String> dynamicRules;
 
   StackConfig copy() => StackConfig.fromJson(toJson());
 
   Map<String, dynamic> toJson() => <String, dynamic>{
-    'mode': mode,
-    'architecture': architecture,
-    'featureRoot': featureRoot,
-    'sharedRoot': sharedRoot,
-    'state': state,
-    'routing': routing,
-    'di': di,
-    'network': network,
-    'storage': storage,
-    'localization': localization,
-    'assets': assets,
-    'modelCodegen': modelCodegen,
-    'jsonCodegen': jsonCodegen,
-    'blockingLoader': blockingLoader,
-    'listLoader': listLoader,
-    'inlineLoader': inlineLoader,
-    'pagination': pagination,
-    'observedStructure': observedStructure,
-    'uiComponents': uiComponents,
-    'rules': rules,
-    'ruleset': ruleset,
-    'rulesetProfile': rulesetProfile,
-  };
+        'mode': mode,
+        'architecture': architecture,
+        'featureRoot': featureRoot,
+        'sharedRoot': sharedRoot,
+        'state': state,
+        'routing': routing,
+        'di': di,
+        'network': network,
+        'storage': storage,
+        'localization': localization,
+        'assets': assets,
+        'modelCodegen': modelCodegen,
+        'jsonCodegen': jsonCodegen,
+        'blockingLoader': blockingLoader,
+        'listLoader': listLoader,
+        'inlineLoader': inlineLoader,
+        'pagination': pagination,
+        'observedStructure': observedStructure,
+        'uiComponents': uiComponents,
+        'rules': rules,
+        'ruleset': ruleset,
+        'rulesetProfile': rulesetProfile,
+        'ruleMappings': ruleMappings,
+        'dynamicRules': dynamicRules,
+      };
 
   factory StackConfig.fromJson(Map<String, dynamic> json) {
     final rawUi = json['uiComponents'];
     final rawRules = json['rules'];
     final rawStructure = json['observedStructure'];
+    final rawMappings = json['ruleMappings'];
+    final rawDynamicRules = json['dynamicRules'];
     return StackConfig(
       mode: json['mode']?.toString() ?? 'existing',
       architecture: _nullable(json['architecture']),
@@ -112,6 +122,13 @@ class StackConfig {
           : <String, String>{},
       ruleset: _nullable(json['ruleset']),
       rulesetProfile: _nullable(json['rulesetProfile']),
+      ruleMappings: rawMappings is Map
+          ? rawMappings
+              .map((key, value) => MapEntry(key.toString(), value.toString()))
+          : <String, String>{},
+      dynamicRules: rawDynamicRules is List
+          ? rawDynamicRules.map((item) => item.toString()).toList()
+          : <String>[],
     );
   }
 
@@ -123,20 +140,20 @@ class StackConfig {
   }
 
   List<String> get profileKeys => <String>[
-    if (architecture != null) 'architecture:$architecture',
-    if (state != null) 'state:$state',
-    if (routing != null) 'routing:$routing',
-    if (di != null) 'di:$di',
-    if (network != null) 'network:$network',
-    if (storage != null) 'storage:$storage',
-    if (localization != null) 'localization:$localization',
-    if (assets != null) 'assets:$assets',
-    if (modelCodegen != null) 'codegen:$modelCodegen',
-    if (blockingLoader != null) 'loading:$blockingLoader',
-    if (listLoader != null) 'loading:$listLoader',
-    if (inlineLoader != null) 'loading:$inlineLoader',
-    if (pagination != null) 'pagination:$pagination',
-  ];
+        if (architecture != null) 'architecture:$architecture',
+        if (state != null) 'state:$state',
+        if (routing != null) 'routing:$routing',
+        if (di != null) 'di:$di',
+        if (network != null) 'network:$network',
+        if (storage != null) 'storage:$storage',
+        if (localization != null) 'localization:$localization',
+        if (assets != null) 'assets:$assets',
+        if (modelCodegen != null) 'codegen:$modelCodegen',
+        if (blockingLoader != null) 'loading:$blockingLoader',
+        if (listLoader != null) 'loading:$listLoader',
+        if (inlineLoader != null) 'loading:$inlineLoader',
+        if (pagination != null) 'pagination:$pagination',
+      ];
 
   String? valueForKind(String kind) {
     switch (kind) {
@@ -232,9 +249,9 @@ class ManagedFileRecord {
   final String sha256;
 
   Map<String, dynamic> toJson() => <String, dynamic>{
-    'path': path,
-    'sha256': sha256,
-  };
+        'path': path,
+        'sha256': sha256,
+      };
 
   factory ManagedFileRecord.fromJson(Map<String, dynamic> json) =>
       ManagedFileRecord(
@@ -255,10 +272,10 @@ class AgentsManifest {
   final Map<String, ManagedFileRecord> files;
 
   Map<String, dynamic> toJson() => <String, dynamic>{
-    'version': version,
-    'config': config.toJson(),
-    'files': files.map((key, value) => MapEntry(key, value.toJson())),
-  };
+        'version': version,
+        'config': config.toJson(),
+        'files': files.map((key, value) => MapEntry(key, value.toJson())),
+      };
 
   factory AgentsManifest.fromJson(Map<String, dynamic> json) {
     final rawFiles = json['files'];

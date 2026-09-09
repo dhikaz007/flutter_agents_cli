@@ -17,6 +17,7 @@ import 'prompts.dart';
 import 'registry.dart';
 import 'rule_store.dart';
 import 'ruleset_store.dart';
+import 'rule_mapper.dart';
 import 'style_auditor.dart';
 
 Future<void> runAgents(List<String> arguments) async {
@@ -193,6 +194,9 @@ ArgParser _buildParser() {
   ruleset.addCommand('use');
   ruleset.addCommand('update')..addFlag('apply', negatable: false);
   ruleset.addCommand('profiles');
+  ruleset.addCommand('map')..addFlag('review', negatable: false);
+  ruleset.addCommand('apply');
+  ruleset.addCommand('link')..addFlag('yes', abbr: 'y', negatable: false);
   ruleset.addCommand('status');
   ruleset.addCommand('diff');
   ruleset.addCommand('lock');
@@ -292,6 +296,9 @@ Dynamic rulesets:
   agents ruleset use <name> <profile>
   agents ruleset update <name>
   agents ruleset profiles <name>
+  agents ruleset map [--review]
+  agents ruleset apply <name> <concern...>
+  agents ruleset link [--yes]
   agents ruleset validate <name>
   agents ruleset diff <name>
   agents ruleset status <name>
@@ -456,6 +463,79 @@ Future<void> _ruleset(Directory root, ArgResults command) async {
       for (final profile in store.profiles(args.single))
         stdout.writeln(profile);
       return;
+    case 'map':
+      if (args.isNotEmpty)
+        throw ArgumentError('Usage: agents ruleset map [--review]');
+      final mapper = RuleMapper();
+      final found = mapper.scan(root);
+      stdout.writeln('Project rule mapping');
+      if (found.isEmpty) {
+        stdout.writeln('No recognizable project rule documents found.');
+      } else {
+        for (final entry in found.entries.toList()
+          ..sort((a, b) => a.key.compareTo(b.key))) {
+          if (entry.value.length == 1) {
+            stdout.writeln('- ${entry.key}: ${entry.value.single}');
+          } else {
+            stdout.writeln(
+                '- ${entry.key}: ambiguous (${entry.value.join(', ')})');
+          }
+        }
+      }
+      if (sub?['review'] == true) {
+        stdout.writeln(mapper.ambiguousMappings(root).isEmpty
+            ? 'Preview only. Run `agents ruleset map` to write this mapping.'
+            : 'Preview only. Resolve ambiguous documents before applying a map.');
+        return;
+      }
+      final manifest = ManifestStore().load(root);
+      if (manifest == null) throw StateError('Run `agents init` first.');
+      final config = manifest.config.copy();
+      for (final entry in mapper.unambiguousMappings(root).entries) {
+        if (!(config.ruleMappings[entry.key]?.startsWith('dynamic:') ??
+            false)) {
+          config.ruleMappings[entry.key] = 'project:${entry.value}';
+        }
+      }
+      final report = await RuleGenerator().apply(root, config);
+      _printGenerationReport(report);
+      return;
+    case 'apply':
+      if (args.length < 2) {
+        throw ArgumentError('Usage: agents ruleset apply <name> <concern...>');
+      }
+      final manifest = ManifestStore().load(root);
+      if (manifest == null) throw StateError('Run `agents init` first.');
+      final name = args.first;
+      final config = manifest.config.copy();
+      if (config.ruleset != name || config.rulesetProfile == null) {
+        throw StateError(
+            'Select a profile first with `agents ruleset use $name <profile>`.');
+      }
+      final available = _dynamicRuleConcerns(
+        store.resolve(name, config.rulesetProfile!),
+      );
+      for (final concern in args.skip(1)) {
+        if (!available.contains(concern)) {
+          throw ArgumentError('No Dynamic Rule found for concern: $concern');
+        }
+        final current = config.ruleMappings[concern];
+        if (current?.startsWith('project:') ?? false) {
+          if (!confirm(
+              'Use Dynamic Rule for $concern instead of ${current!.substring(8)}?',
+              defaultYes: false)) return;
+        }
+        if (!config.dynamicRules.contains(concern))
+          config.dynamicRules.add(concern);
+      }
+      final report = await RuleGenerator().apply(root, config);
+      _printGenerationReport(report);
+      return;
+    case 'link':
+      if (args.isNotEmpty)
+        throw ArgumentError('Usage: agents ruleset link [--yes]');
+      _linkRuleMap(root, yes: sub?['yes'] == true);
+      return;
     case 'status':
       if (args.length != 1)
         throw ArgumentError('Usage: agents ruleset status <name>');
@@ -601,8 +681,29 @@ Future<void> _ruleset(Directory root, ArgResults command) async {
             break;
         }
       }
+      final dynamicDirectory =
+          Directory(p.join(root.path, 'docs/dynamic-rules'));
+      final copiedRules = dynamicDirectory.existsSync()
+          ? dynamicDirectory
+              .listSync(recursive: true)
+              .whereType<File>()
+              .where((file) => p.extension(file.path) == '.md')
+              .length
+          : 0;
       stdout.writeln(
-          'Managed dynamic files: $modified modified, $missing missing.');
+        'Managed dynamic files: $copiedRules copied, $modified modified, $missing missing.',
+      );
+      stdout.writeln('Rule sources:');
+      if (manifest.config.ruleMappings.isEmpty) {
+        stdout.writeln('- none mapped (run `agents ruleset map`).');
+      } else {
+        for (final entry in manifest.config.ruleMappings.entries.toList()
+          ..sort((a, b) => a.key.compareTo(b.key))) {
+          final parts = entry.value.split(':');
+          stdout.writeln(
+              '- ${entry.key}: ${parts.first} (${parts.sublist(1).join(':')})');
+        }
+      }
 
       final diff = await store.diff(name);
       stdout.writeln(diff.hasChanges
@@ -2019,6 +2120,52 @@ void _printConfig(StackConfig c) {
   );
   stdout.writeln('Pagination: ${c.pagination}');
   if (c.rules.isNotEmpty) stdout.writeln('Rules: ${c.rules}');
+}
+
+Set<String> _dynamicRuleConcerns(Directory rulesetRoot) {
+  final folder = Directory(p.join(rulesetRoot.path, 'rules'));
+  if (!folder.existsSync()) return <String>{};
+  final mapper = RuleMapper();
+  final concerns = folder
+      .listSync(recursive: true)
+      .whereType<File>()
+      .where((file) => p.extension(file.path).toLowerCase() == '.md')
+      .map((file) => mapper.classify(file.path, file.readAsStringSync()))
+      .whereType<String>()
+      .toSet();
+  if (concerns.contains('state-management')) concerns.add('pagination');
+  return concerns;
+}
+
+void _linkRuleMap(Directory root, {required bool yes}) {
+  final file = File(p.join(root.path, 'AGENTS.md'));
+  if (!file.existsSync()) {
+    throw StateError(
+        'AGENTS.md not found. Create it first, then run `agents ruleset link`.');
+  }
+  const start = '<!-- flutter-agents:rule-map:start -->';
+  const end = '<!-- flutter-agents:rule-map:end -->';
+  final current = file.readAsStringSync();
+  if (current.contains(start) && current.contains(end)) {
+    stdout.writeln('AGENTS.md is already linked to docs/RULES-MAP.md.');
+    return;
+  }
+  if (!yes &&
+      !confirm('Add one rule-map reference to AGENTS.md?', defaultYes: false)) {
+    return;
+  }
+  final block = '''
+
+$start
+## Project rule map
+
+Before changing a concern, read its active source in `docs/RULES-MAP.md`.
+Project-mapped documents are the default source of truth; load a Dynamic Rule
+only when that concern is explicitly mapped to `dynamic`.
+$end
+''';
+  file.writeAsStringSync('$current$block');
+  stdout.writeln('Linked AGENTS.md to docs/RULES-MAP.md.');
 }
 
 void _printGenerationReport(GenerationReport report, {bool dryRun = false}) {

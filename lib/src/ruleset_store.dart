@@ -187,7 +187,8 @@ class RulesetStore {
           .split('\n')
           .where((line) => line.trim().isNotEmpty)
           .map((line) => _relativeDiffPath(line.trim(), target, clone))
-          .where((path) => !path.startsWith('.git${p.separator}'))
+          .where((path) =>
+              path != '/dev/null' && !path.startsWith('.git${p.separator}'))
           .toList()
         ..sort();
       final dependencyChanges = <String, List<String>>{};

@@ -1,4 +1,4 @@
-# flutter-agents CLI v2.1.1
+# flutter-agents CLI v2.1.6
 
 [![CI](https://github.com/dhikaz007/flutter_agents_cli/actions/workflows/ci.yml/badge.svg)](https://github.com/dhikaz007/flutter_agents_cli/actions/workflows/ci.yml)
 [![Release](https://github.com/dhikaz007/flutter_agents_cli/actions/workflows/release.yml/badge.svg)](https://github.com/dhikaz007/flutter_agents_cli/actions/workflows/release.yml)
@@ -469,7 +469,7 @@ agents init
 agents ruleset use vibe-coding-rules go_router_get_it
 ```
 
-For Flutter Modular projects, choose the matching `flutter_modular_v5`, `flutter_modular_v6`, or `flutter_modular_v7` profile. `ruleset use` writes `PROJECT_PROFILE.md` and copies only universal rules plus the selected profile into `docs/dynamic-rules/`. Generated `AGENTS.md` reads that profile just in time. Do not combine profiles in one project.
+For Flutter Modular projects, choose the matching `flutter_modular_v5`, `flutter_modular_v6`, or `flutter_modular_v7` profile. `ruleset use` writes `PROJECT_PROFILE.md`, but does not copy generic Dynamic Rules into an existing project. Do not combine profiles in one project.
 
 Presets remain supported. A preset can store `ruleset` and `rulesetProfile` alongside existing stack fields:
 
@@ -503,6 +503,9 @@ agents ruleset add vibe-coding-rules https://github.com/dhikaz007/vibe_coding_ru
 agents init
 agents ruleset recommend vibe-coding-rules
 agents ruleset use vibe-coding-rules flutter_modular_v6
+agents ruleset map --review
+agents ruleset map
+agents ruleset link
 agents dependency plan
 agents ruleset audit
 agents ruleset lock
@@ -510,10 +513,42 @@ agents ruleset lock
 
 Use the matching profile for Flutter Modular v5, v6, or v7. For GoRouter projects use `go_router_get_it`.
 
+### Existing project rule mapping (v2.1.6)
+
+Existing project rules are the default source of truth. The CLI scans Markdown
+documents under `docs/`, maps recognizable concerns by filename first and then
+by heading/content, and writes the result to `docs/RULES-MAP.md`. It never
+overwrites a mapped project document. Review ambiguous candidates before
+writing the map:
+
+```bash
+agents ruleset map --review
+agents ruleset map
+agents ruleset link
+```
+
+`link` is explicit: it adds one marked reference to `AGENTS.md`, so agents
+know to consult `docs/RULES-MAP.md`; it never replaces existing instructions.
+
+Select Dynamic Rules only for the concerns that need them:
+
+```bash
+agents ruleset apply vibe-coding-rules ui pagination
+```
+
+The command asks before changing a mapped concern from `project` to `dynamic`.
+Only selected documents are copied into `docs/dynamic-rules/`; the original
+project rule remains untouched. `agents ruleset audit` reports the active
+source for each concern.
+
 ### Ruleset maintenance
 
 ```bash
 agents ruleset profiles vibe-coding-rules
+agents ruleset map --review
+agents ruleset map
+agents ruleset apply vibe-coding-rules ui pagination
+agents ruleset link
 agents ruleset validate vibe-coding-rules
 agents ruleset diff vibe-coding-rules
 agents ruleset update vibe-coding-rules
@@ -531,6 +566,8 @@ agents doctor --fix
 ```
 
 `dependency plan` and `dependency add` now preserve the distinction between runtime and dev dependencies defined by the active profile. `validate` checks required documents and required `profile.yaml` metadata. `recommend` suggests a compatible available profile from an existing project's dependencies without applying it. `diff` is read-only: it previews files, changed profiles, and active-profile dependency metadata before an update. `upgrade-plan` turns the remote diff into a review checklist for the active profile, including exact profile dependency changes. `lock` writes the exact full Git revision currently in use; `restore` returns the cache and generated dynamic rules to that locked revision. `audit` gives a single read-only health report for the selected profile, lock, managed files, remote changes, and required dependencies. `update` refreshes the cached Git ruleset; `sync` applies its active profile to the project. `doctor --fix` restores only missing CLI-managed files and preserves user-modified files.
+
+CI also runs a smoke matrix for all supported Dynamic Rules profiles. The smoke test verifies profile selection and the generated rule map without requiring a full Dynamic Rules bundle to be copied into an existing project.
 
 ## Profile presets (v1.9)
 

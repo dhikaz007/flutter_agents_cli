@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.1.8
+
+- Add a safe dry-run report for existing-project folder structure migrations.
+
 ## 2.1.7
 
 - Make `agents init` scan-first for existing projects and prompt minimally for new projects.

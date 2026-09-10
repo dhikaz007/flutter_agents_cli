@@ -236,6 +236,9 @@ ArgParser _buildParser() {
   migrate.addCommand('modular')
     ..addFlag('dry-run', negatable: false)
     ..addOption('output', help: 'Write the Markdown report to this path.');
+  migrate.addCommand('structure')
+    ..addFlag('dry-run', negatable: false)
+    ..addOption('output', help: 'Write the Markdown report to this path.');
 
   parser.addCommand('version');
   final style = parser.addCommand('style');
@@ -334,6 +337,7 @@ Dependencies:
 
 Migration planning:
   agents migrate modular <v5|v6|v7> <v5|v6|v7> --dry-run [--output report.md]
+  agents migrate structure <from-profile> <to-profile> --dry-run [--output report.md]
 
 Other:
   agents version
@@ -347,6 +351,25 @@ Use `agents context` to preview the minimum rule context for a coding task.''');
 
 void _migrate(Directory root, ArgResults command) {
   final sub = command.command;
+  if (sub?.name == 'structure') {
+    if (sub!.rest.length != 2 || sub['dry-run'] != true) {
+      throw ArgumentError(
+          'Usage: agents migrate structure <from-profile> <to-profile> --dry-run [--output report.md]');
+    }
+    final report = MigrationPlanner().structureReport(
+      root,
+      sub.rest[0],
+      sub.rest[1],
+    );
+    final output = sub['output'] as String?;
+    if (output != null && output.trim().isNotEmpty) {
+      File(p.join(root.path, output)).writeAsStringSync('$report\n');
+      stdout.writeln('Migration report written: $output');
+    } else {
+      stdout.writeln(report);
+    }
+    return;
+  }
   if (sub?.name != 'modular' ||
       sub!.rest.length != 2 ||
       sub['dry-run'] != true) {

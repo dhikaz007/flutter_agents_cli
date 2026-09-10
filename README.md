@@ -597,6 +597,7 @@ Preview the source areas that require review before a Flutter Modular major-vers
 ```bash
 agents migrate modular v6 v7 --dry-run
 agents migrate modular v6 v7 --dry-run --output docs/migrations/modular-v7.md
+agents migrate structure feature_first_simple feature_first_clean --dry-run
 ```
 
 This command only reports observed v5/v6/v7 APIs and a manual review checklist. It never edits source files or `pubspec.yaml`.

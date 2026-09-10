@@ -1,6 +1,35 @@
 import 'dart:io';
 
 class MigrationPlanner {
+  String structureReport(Directory root, String from, String to) {
+    final lib = Directory('${root.path}${Platform.pathSeparator}lib');
+    final folders = <String>[];
+    if (lib.existsSync()) {
+      for (final entity in lib.listSync(recursive: true)) {
+        if (entity is Directory) {
+          folders.add(entity.path.substring(root.path.length + 1));
+        }
+      }
+    }
+    folders.sort();
+    return <String>[
+      '# Folder structure migration dry run',
+      '',
+      'Target: $from → $to',
+      '',
+      '## Observed folders',
+      if (folders.isEmpty)
+        '- No folders found under `lib/`.'
+      else
+        ...folders.map((path) => '- `$path`'),
+      '',
+      '## Safety',
+      '- No application files were changed.',
+      '- Automatic moves require an explicit project folder mapping because profile names do not define source-to-target moves.',
+      '- Review each feature, import, route, barrel, and generated reference before applying a migration.',
+    ].join('\n');
+  }
+
   String modularReport(Directory root, String from, String to) {
     final signals = <String, RegExp>{
       'v5 routes': RegExp(r'\b(?:ChildRoute|ModuleRoute|RouteGuard)\b'),

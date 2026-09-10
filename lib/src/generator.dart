@@ -33,7 +33,7 @@ class RuleGenerator {
     final templates = await templateRoot();
     final previous = manifestStore.load(project);
     _discoverProjectRules(project, config);
-    final desired = await _desiredFiles(templates, config);
+    final desired = await _desiredFiles(project, templates, config);
     final report = GenerationReport();
     final nextRecords = <String, ManagedFileRecord>{};
 
@@ -118,6 +118,7 @@ class RuleGenerator {
   }
 
   Future<Map<String, List<int>>> _desiredFiles(
+    Directory project,
     Directory templates,
     StackConfig config,
   ) async {
@@ -182,7 +183,34 @@ class RuleGenerator {
           }
           if (source == null) continue;
           final rel = 'docs/dynamic-rules/rules/${p.basename(source.path)}';
-          desired[rel] = source.readAsBytesSync();
+          final dynamicBytes = source.readAsBytesSync();
+          final projectMapping = config.ruleMappings[concern];
+          if (projectMapping?.startsWith('project:') ?? false) {
+            final projectRel = projectMapping!.substring('project:'.length);
+            final projectFile = File(p.join(project.path, projectRel));
+            if (projectFile.existsSync()) {
+              final mergedRel = 'docs/dynamic-rules/merged/$concern.md';
+              final merged = StringBuffer()
+                ..writeln('# Active ${concern.replaceAll('-', ' ')} Rules')
+                ..writeln()
+                ..writeln('## Project Rules')
+                ..writeln()
+                ..writeln('<!-- Source: $projectRel -->')
+                ..writeln()
+                ..write(projectFile.readAsStringSync())
+                ..writeln()
+                ..writeln()
+                ..writeln('## Dynamic Rules')
+                ..writeln()
+                ..writeln('<!-- Source: $rel -->')
+                ..writeln()
+                ..write(String.fromCharCodes(dynamicBytes));
+              desired[mergedRel] = utf8.encode(merged.toString());
+              config.ruleMappings[concern] = 'merged:$mergedRel';
+              continue;
+            }
+          }
+          desired[rel] = dynamicBytes;
           config.ruleMappings[concern] = 'dynamic:$rel';
         }
       }

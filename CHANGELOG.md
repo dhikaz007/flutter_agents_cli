@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.1.7
+
+- Make `agents init` scan-first for existing projects and prompt minimally for new projects.
+- Automatically download the official Dynamic Rules bundle when selected for a new project.
+
 ## 2.1.6
 
 - Map existing project rule documents by concern without overwriting them.

@@ -1,6 +1,57 @@
 import 'dart:io';
 
 class MigrationPlanner {
+  List<String> applyStructure(Directory root, File mapping) {
+    if (!mapping.existsSync()) {
+      throw ArgumentError('Mapping file not found: ${mapping.path}');
+    }
+    final moves = <MapEntry<String, String>>[];
+    for (final line in mapping.readAsLinesSync()) {
+      final text = line.trim();
+      if (text.isEmpty || text.startsWith('#') || text == 'moves:') continue;
+      final match = RegExp(r'^[- ]*([^:#]+):\s*(.+)$').firstMatch(text);
+      if (match == null) continue;
+      moves.add(MapEntry(match.group(1)!.trim(), match.group(2)!.trim()));
+    }
+    if (moves.isEmpty)
+      throw ArgumentError(
+          'Mapping must contain at least one source: target move.');
+    final backup = Directory(
+        '${root.path}${Platform.pathSeparator}.flutter-agents-backup${Platform.pathSeparator}structure-${DateTime.now().toUtc().toIso8601String().replaceAll(':', '-')}');
+    final moved = <String>[];
+    for (final move in moves) {
+      final source =
+          Directory('${root.path}${Platform.pathSeparator}${move.key}');
+      final target =
+          Directory('${root.path}${Platform.pathSeparator}${move.value}');
+      if (!source.existsSync())
+        throw StateError('Source folder not found: ${move.key}');
+      if (target.existsSync())
+        throw StateError('Target folder already exists: ${move.value}');
+      final backupTarget =
+          Directory('${backup.path}${Platform.pathSeparator}${move.key}');
+      backupTarget.parent.createSync(recursive: true);
+      _copyDirectory(source, backupTarget);
+      target.parent.createSync(recursive: true);
+      source.renameSync(target.path);
+      moved.add('${move.key} → ${move.value}');
+    }
+    return moved;
+  }
+
+  void _copyDirectory(Directory source, Directory target) {
+    target.createSync(recursive: true);
+    for (final entity in source.listSync(recursive: false)) {
+      final destination =
+          '${target.path}${Platform.pathSeparator}${entity.uri.pathSegments.last}';
+      if (entity is Directory) {
+        _copyDirectory(entity, Directory(destination));
+      } else if (entity is File) {
+        File(destination).writeAsBytesSync(entity.readAsBytesSync());
+      }
+    }
+  }
+
   String structureReport(Directory root, String from, String to) {
     final lib = Directory('${root.path}${Platform.pathSeparator}lib');
     final folders = <String>[];

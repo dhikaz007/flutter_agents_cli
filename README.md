@@ -1,4 +1,4 @@
-# flutter-agents CLI v2.1.7
+# flutter-agents CLI v2.1.9
 
 [![CI](https://github.com/dhikaz007/flutter_agents_cli/actions/workflows/ci.yml/badge.svg)](https://github.com/dhikaz007/flutter_agents_cli/actions/workflows/ci.yml)
 [![Release](https://github.com/dhikaz007/flutter_agents_cli/actions/workflows/release.yml/badge.svg)](https://github.com/dhikaz007/flutter_agents_cli/actions/workflows/release.yml)
@@ -598,6 +598,10 @@ Preview the source areas that require review before a Flutter Modular major-vers
 agents migrate modular v6 v7 --dry-run
 agents migrate modular v6 v7 --dry-run --output docs/migrations/modular-v7.md
 agents migrate structure feature_first_simple feature_first_clean --dry-run
+agents migrate structure feature_first_simple feature_first_clean --apply --mapping moves.yaml
+
+`--apply` requires an explicit `source: target` folder mapping and creates a
+backup under `.flutter-agents-backup/`; the CLI never guesses folder moves.
 ```
 
 This command only reports observed v5/v6/v7 APIs and a manual review checklist. It never edits source files or `pubspec.yaml`.

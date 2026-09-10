@@ -238,6 +238,9 @@ ArgParser _buildParser() {
     ..addOption('output', help: 'Write the Markdown report to this path.');
   migrate.addCommand('structure')
     ..addFlag('dry-run', negatable: false)
+    ..addFlag('apply', negatable: false)
+    ..addOption('mapping',
+        help: 'YAML mapping with explicit source: target folder moves.')
     ..addOption('output', help: 'Write the Markdown report to this path.');
 
   parser.addCommand('version');
@@ -352,9 +355,23 @@ Use `agents context` to preview the minimum rule context for a coding task.''');
 void _migrate(Directory root, ArgResults command) {
   final sub = command.command;
   if (sub?.name == 'structure') {
-    if (sub!.rest.length != 2 || sub['dry-run'] != true) {
+    if (sub!.rest.length != 2 ||
+        (sub['dry-run'] != true && sub['apply'] != true)) {
       throw ArgumentError(
-          'Usage: agents migrate structure <from-profile> <to-profile> --dry-run [--output report.md]');
+          'Usage: agents migrate structure <from-profile> <to-profile> --dry-run [--output report.md] or --apply --mapping moves.yaml');
+    }
+    if (sub['apply'] == true) {
+      final mapping = sub['mapping'] as String?;
+      if (mapping == null || mapping.trim().isEmpty) {
+        throw ArgumentError('Structure apply requires --mapping moves.yaml.');
+      }
+      if (!confirm('Apply explicit folder moves and create a backup?',
+          defaultYes: false)) return;
+      final moved = MigrationPlanner()
+          .applyStructure(root, File(p.join(root.path, mapping)));
+      stdout.writeln('Structure migration applied with backup.');
+      for (final item in moved) stdout.writeln('- $item');
+      return;
     }
     final report = MigrationPlanner().structureReport(
       root,

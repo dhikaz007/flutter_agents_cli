@@ -1,8 +1,13 @@
 # Changelog
 
+## 2.1.9
+
+- Add explicit mapping-based structure migration apply with backup protection.
+
 ## 2.1.8
 
 - Add a safe dry-run report for existing-project folder structure migrations.
+- Add explicit mapping-based structure apply with backup protection.
 
 ## 2.1.7
 

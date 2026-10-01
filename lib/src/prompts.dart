@@ -21,7 +21,8 @@ String? choose(
 }
 
 String chooseMode(String detected) {
-  final result = choose('Project mode', <String>['existing', 'new'], detected: detected, allowNone: false);
+  final result = choose('Project mode', <String>['existing', 'new'],
+      detected: detected, allowNone: false);
   return result ?? detected;
 }
 

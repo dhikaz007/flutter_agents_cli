@@ -20,11 +20,13 @@ void main() {
   test('bridge can be added and removed without deleting existing content', () {
     final root = Directory.systemTemp.createTempSync('agents-bridge-');
     addTearDown(() => root.deleteSync(recursive: true));
-    final file = File('${root.path}/AGENTS.md')..writeAsStringSync('# Existing\n');
+    final file = File('${root.path}/AGENTS.md')
+      ..writeAsStringSync('# Existing\n');
     final adoption = ExistingConfigAdoption();
 
     adoption.addBridgeToExistingAgents(root);
-    expect(file.readAsStringSync(), contains(ExistingConfigAdoption.bridgeStart));
+    expect(
+        file.readAsStringSync(), contains(ExistingConfigAdoption.bridgeStart));
 
     adoption.removeBridgeFromExistingAgents(root);
     expect(file.readAsStringSync(), '# Existing\n');

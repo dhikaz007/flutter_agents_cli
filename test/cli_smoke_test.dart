@@ -2,8 +2,8 @@ import 'dart:io';
 
 import 'package:test/test.dart';
 
-ProcessResult runCli(List<String> args) =>
-    Process.runSync(Platform.resolvedExecutable, ['run', 'bin/agents.dart', ...args]);
+ProcessResult runCli(List<String> args) => Process.runSync(
+    Platform.resolvedExecutable, ['run', 'bin/agents.dart', ...args]);
 
 void main() {
   group('cli entry point', () {

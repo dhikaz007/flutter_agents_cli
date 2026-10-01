@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 2.1.10
+
 - Split `lib/src/cli.dart` into per-command-group files with no behavior change.
 - Add a command-tree smoke test covering every top-level command and the `ruleset` and `preset` subcommands.
 - Deduplicate the preset field lists in `lib/src/preset_io.dart` so `_configKeys` is the single source of truth, with no change to exported YAML.

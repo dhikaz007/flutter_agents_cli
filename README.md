@@ -431,6 +431,22 @@ Unsupported packages are not automatically replaced. Existing code remains autho
 
 This package intentionally has few dependencies: `args`, `path`, `yaml`, and `crypto`.
 
+The CLI is split by command group rather than kept in one file:
+
+| File | Commands |
+| --- | --- |
+| `lib/src/cli.dart` | entry point, argument parser, dispatch |
+| `lib/src/cli_project.dart` | `init`, `detect`, `sync`, `doctor`, `status`, `uninstall` |
+| `lib/src/cli_ruleset.dart` | `ruleset` |
+| `lib/src/cli_preset.dart` | `preset` |
+| `lib/src/cli_profile.dart` | `add`, `remove`, `explain`, `context`, `learn`, `structure`, `rule` |
+| `lib/src/cli_tools.dart` | `migrate`, `dependency`, `style` |
+| `lib/src/cli_output.dart` | shared reporting helpers |
+
+`test/cli_smoke_test.dart` guards the command tree, so moving code between these files cannot silently drop a command.
+
+Preset YAML keys are declared once in `PresetIO._configKeys`. Adding a config field means editing that set and, for a plain string field, `_scalarConfigKeys` and `_scalarValue`. `test/preset_io_test.dart` asserts the exported key order and the core-field coverage of every built-in preset.
+
 Run before release:
 
 ```bash

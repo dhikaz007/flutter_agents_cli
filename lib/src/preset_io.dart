@@ -26,26 +26,11 @@ class PresetDocument {
 
   bool get isPartial => !_allCoreFields.every(fields.contains);
 
-  static const Set<String> _allCoreFields = <String>{
-    'mode',
-    'architecture',
-    'featureRoot',
-    'sharedRoot',
-    'state',
-    'routing',
-    'di',
-    'network',
-    'storage',
-    'localization',
-    'assets',
-    'modelCodegen',
-    'jsonCodegen',
-    'blockingLoader',
-    'listLoader',
-    'inlineLoader',
-    'pagination',
-    'uiComponents',
-  };
+  /// Core fields a built-in preset always declares. `ruleset` and
+  /// `rulesetProfile` are excluded: they are chosen at `init` time, not part of
+  /// a preset definition.
+  static final Set<String> _allCoreFields = Set<String>.of(PresetIO._configKeys)
+    ..removeAll(<String>{'ruleset', 'rulesetProfile'});
 
   StackConfig mergeInto(StackConfig base) {
     final out = base.copy();
@@ -137,20 +122,19 @@ class PresetIO {
 
   List<String> userNames() {
     if (!userPresetsDir.existsSync()) return <String>[];
-    final out =
-        userPresetsDir
-            .listSync()
-            .whereType<File>()
-            .where(
-              (f) => <String>[
-                '.yaml',
-                '.yml',
-              ].contains(p.extension(f.path).toLowerCase()),
-            )
-            .map((f) => p.basenameWithoutExtension(f.path))
-            .toSet()
-            .toList()
-          ..sort();
+    final out = userPresetsDir
+        .listSync()
+        .whereType<File>()
+        .where(
+          (f) => <String>[
+            '.yaml',
+            '.yml',
+          ].contains(p.extension(f.path).toLowerCase()),
+        )
+        .map((f) => p.basenameWithoutExtension(f.path))
+        .toSet()
+        .toList()
+      ..sort();
     return out;
   }
 
@@ -165,26 +149,7 @@ class PresetIO {
     if (builtIn != null) {
       return PresetDocument(
         config: builtIn,
-        fields: <String>{
-          'mode',
-          'architecture',
-          'featureRoot',
-          'sharedRoot',
-          'state',
-          'routing',
-          'di',
-          'network',
-          'storage',
-          'localization',
-          'assets',
-          'modelCodegen',
-          'jsonCodegen',
-          'blockingLoader',
-          'listLoader',
-          'inlineLoader',
-          'pagination',
-          'uiComponents',
-        },
+        fields: PresetDocument._allCoreFields,
         ruleLayers: builtIn.rules.keys.toSet(),
         name: nameOrPath,
         source: 'built-in',
@@ -249,7 +214,7 @@ class PresetIO {
   }) {
     final document = PresetDocument(
       config: config,
-      fields: _configKeys.toSet(),
+      fields: Set<String>.of(_configKeys),
       ruleLayers: config.rules.keys.toSet(),
       name: _safe(name),
       description: description,
@@ -282,7 +247,7 @@ class PresetIO {
   void export(StackConfig c, File file, {String? name, String? description}) {
     final document = PresetDocument(
       config: c,
-      fields: _configKeys.toSet(),
+      fields: Set<String>.of(_configKeys),
       ruleLayers: c.rules.keys.toSet(),
       name: name,
       description: description,
@@ -305,23 +270,9 @@ class PresetIO {
       lines.add('$key: ${value == null ? 'none' : _quoteIfNeeded(value)}');
     }
 
-    addScalar('mode', d.config.mode);
-    addScalar('architecture', d.config.architecture);
-    addScalar('featureRoot', d.config.featureRoot);
-    addScalar('sharedRoot', d.config.sharedRoot);
-    addScalar('state', d.config.state);
-    addScalar('routing', d.config.routing);
-    addScalar('di', d.config.di);
-    addScalar('network', d.config.network);
-    addScalar('storage', d.config.storage);
-    addScalar('localization', d.config.localization);
-    addScalar('assets', d.config.assets);
-    addScalar('modelCodegen', d.config.modelCodegen);
-    addScalar('jsonCodegen', d.config.jsonCodegen);
-    addScalar('blockingLoader', d.config.blockingLoader);
-    addScalar('listLoader', d.config.listLoader);
-    addScalar('inlineLoader', d.config.inlineLoader);
-    addScalar('pagination', d.config.pagination);
+    for (final key in _scalarConfigKeys) {
+      addScalar(key, _scalarValue(d.config, key));
+    }
 
     if (d.ruleLayers.isNotEmpty) {
       lines.add('rules:');
@@ -348,7 +299,10 @@ class PresetIO {
     file.writeAsStringSync('${lines.join('\n')}\n');
   }
 
-  static const List<String> _configKeys = <String>[
+  /// Every key a preset YAML may carry. Single source of truth for the field
+  /// lists used by [PresetDocument.isPartial], built-in resolution, reading a
+  /// user preset, and export.
+  static const Set<String> _configKeys = <String>{
     'mode',
     'architecture',
     'featureRoot',
@@ -369,11 +323,74 @@ class PresetIO {
     'uiComponents',
     'ruleset',
     'rulesetProfile',
+  };
+
+  /// Keys holding a plain `String?` value, in export order. Everything else in
+  /// [_configKeys] is either a map (`uiComponents`) or only settable by the CLI.
+  static const List<String> _scalarConfigKeys = <String>[
+    'mode',
+    'architecture',
+    'featureRoot',
+    'sharedRoot',
+    'state',
+    'routing',
+    'di',
+    'network',
+    'storage',
+    'localization',
+    'assets',
+    'modelCodegen',
+    'jsonCodegen',
+    'blockingLoader',
+    'listLoader',
+    'inlineLoader',
+    'pagination',
   ];
 
   String _quoteIfNeeded(String value) {
     if (RegExp(r'^[A-Za-z0-9_./-]+$').hasMatch(value)) return value;
     return _quote(value);
+  }
+
+  /// Reads a scalar config field by name, for [_scalarConfigKeys] iteration.
+  static String? _scalarValue(StackConfig c, String key) {
+    switch (key) {
+      case 'mode':
+        return c.mode;
+      case 'architecture':
+        return c.architecture;
+      case 'featureRoot':
+        return c.featureRoot;
+      case 'sharedRoot':
+        return c.sharedRoot;
+      case 'state':
+        return c.state;
+      case 'routing':
+        return c.routing;
+      case 'di':
+        return c.di;
+      case 'network':
+        return c.network;
+      case 'storage':
+        return c.storage;
+      case 'localization':
+        return c.localization;
+      case 'assets':
+        return c.assets;
+      case 'modelCodegen':
+        return c.modelCodegen;
+      case 'jsonCodegen':
+        return c.jsonCodegen;
+      case 'blockingLoader':
+        return c.blockingLoader;
+      case 'listLoader':
+        return c.listLoader;
+      case 'inlineLoader':
+        return c.inlineLoader;
+      case 'pagination':
+        return c.pagination;
+    }
+    return null;
   }
 
   String _quote(String value) =>

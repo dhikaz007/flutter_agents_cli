@@ -6,7 +6,7 @@
 - Add a command-tree smoke test covering every top-level command and the `ruleset` and `preset` subcommands.
 - Deduplicate the preset field lists in `lib/src/preset_io.dart` so `_configKeys` is the single source of truth, with no change to exported YAML.
 - Add preset tests for export field order, core-field coverage of built-in presets, and `isPartial` detection.
-- Document the `[<ACTION>]: <message>` commit message convention in the README.
+- Document the `[<ACTION>]: <message>` commit message convention in the README and `AGENTS.md`.
 
 ## 2.1.9
 

@@ -447,6 +447,21 @@ The CLI is split by command group rather than kept in one file:
 
 Preset YAML keys are declared once in `PresetIO._configKeys`. Adding a config field means editing that set and, for a plain string field, `_scalarConfigKeys` and `_scalarValue`. `test/preset_io_test.dart` asserts the exported key order and the core-field coverage of every built-in preset.
 
+### Commit messages
+
+Every commit message uses this format: `[<ACTION>]: <message>`
+
+| Action | Use for |
+| --- | --- |
+| `[feat]` | a new command, flag, or profile |
+| `[fix]` | a corrected behavior |
+| `[refactor]` | code rearranged with no behavior change |
+| `[docs]` | documentation only |
+| `[test]` | new coverage |
+| `[chore]` | maintenance, tooling, dependencies |
+
+Keep the message to one line and name the outcome, not the activity. Write "split cli into command-group files" rather than "refactor cli.dart".
+
 Run before release:
 
 ```bash

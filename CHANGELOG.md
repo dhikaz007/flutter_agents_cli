@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Generate `docs/rules/COMMIT.md` and load it for commit-related tasks, enforcing a `[<ACTION>]: <subject>` subject of at most 72 characters with an optional why-only body.
+
 ## 2.1.10
 
 - Split `lib/src/cli.dart` into per-command-group files with no behavior change.

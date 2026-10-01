@@ -449,7 +449,7 @@ Preset YAML keys are declared once in `PresetIO._configKeys`. Adding a config fi
 
 ### Commit messages
 
-Every commit message uses this format: `[<ACTION>]: <message>`
+Format `[<ACTION>]: <subject>`, subject at most 72 characters, with no period at the end.
 
 | Action | Use for |
 | --- | --- |
@@ -460,7 +460,9 @@ Every commit message uses this format: `[<ACTION>]: <message>`
 | `[test]` | new coverage |
 | `[chore]` | maintenance, tooling, dependencies |
 
-Keep the message to one line and name the outcome, not the activity. Write "split cli into command-group files" rather than "refactor cli.dart".
+Body is optional and at most 3 lines. It answers why, never what. Do not restate the changed-file list and do not cite how many tests passed. If the diff already reads clearly on its own, write the subject alone.
+
+Generated projects receive the same rule as `docs/rules/COMMIT.md`, loaded only when a task mentions committing.
 
 Run before release:
 

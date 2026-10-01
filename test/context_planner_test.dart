@@ -77,4 +77,41 @@ void main() {
 
     expect(plan.files, contains('docs/custom-rules/ui.md'));
   });
+
+  test('loads the commit rule only for a commit request', () {
+    File('${root.path}/docs/rules/COMMIT.md')
+      ..createSync(recursive: true)
+      ..writeAsStringSync('# Commit');
+
+    final plan = ContextPlanner().plan(root, config, 'commit the changes');
+
+    expect(plan.concerns, contains('commit'));
+    expect(plan.files, contains('docs/rules/COMMIT.md'));
+  });
+
+  test('does not load the commit rule for unrelated work', () {
+    File('${root.path}/docs/rules/COMMIT.md')
+      ..createSync(recursive: true)
+      ..writeAsStringSync('# Commit');
+
+    final plan = ContextPlanner().plan(root, config, 'tambah widget checkout');
+
+    expect(plan.concerns, isNot(contains('commit')));
+    expect(plan.files, isNot(contains('docs/rules/COMMIT.md')));
+  });
+
+  test('navigation push does not pull in the commit rule', () {
+    File('${root.path}/docs/rules/COMMIT.md')
+      ..createSync(recursive: true)
+      ..writeAsStringSync('# Commit');
+
+    final plan = ContextPlanner().plan(
+      root,
+      config,
+      'push halaman detail dari list',
+    );
+
+    expect(plan.concerns, contains('routing'));
+    expect(plan.concerns, isNot(contains('commit')));
+  });
 }

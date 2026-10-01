@@ -125,7 +125,18 @@ class ContextPlanner {
       'regression',
       'unit test',
       'widget test',
-    ])) concerns.add('testing');
+    ])) {
+      concerns.add('testing');
+    }
+    // 'push' and 'pop' are deliberately absent: they already belong to the
+    // routing concern, so git intent cannot be told apart from navigation.
+    if (any(<String>[
+      'commit',
+      'commit message',
+      'git',
+    ])) {
+      concerns.add('commit');
+    }
     if (any(<String>[
       'feature',
       'migration',
@@ -172,6 +183,7 @@ class ContextPlanner {
     if (concerns.contains('security')) addIfExists('docs/rules/SECURITY.md');
     if (concerns.contains('testing')) addIfExists('docs/rules/TESTING.md');
     if (concerns.contains('codegen')) addIfExists('docs/rules/CODEGEN.md');
+    if (concerns.contains('commit')) addIfExists('docs/rules/COMMIT.md');
     if (concerns.contains('workflow')) addIfExists('docs/rules/WORKFLOW.md');
 
     if (concerns.contains('state') && config.state != null) {

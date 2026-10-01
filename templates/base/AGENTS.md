@@ -71,6 +71,7 @@ Load only the active profile/rule for a concern actually touched by the implemen
 - credentials/tokens/authentication or authorization flow/password rules/secure storage/destructive or sensitive operation → `docs/rules/SECURITY.md`
 - tests → `docs/rules/TESTING.md`
 - generation → `docs/rules/CODEGEN.md`
+- writing a commit message → `docs/rules/COMMIT.md`
 - substantial feature/cross-domain/migration → `docs/rules/WORKFLOW.md`
 
 If inspection reveals a new concern, load that rule then. Do not read the union of all possible concerns first.

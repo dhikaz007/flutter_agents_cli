@@ -7,7 +7,7 @@
 
 ## Commit messages
 
-Every commit message uses `[<ACTION>]: <message>`.
+Format `[<ACTION>]: <subject>`. The subject is at most 72 characters and ends without a period.
 
 | Action | Use for |
 | --- | --- |
@@ -18,6 +18,8 @@ Every commit message uses `[<ACTION>]: <message>`.
 | `[test]` | new coverage |
 | `[chore]` | maintenance, tooling, dependencies |
 
-- One line. Name the outcome, not the activity: write `split cli into command-group files`, not `refactor cli.dart`.
+- Body is optional and at most 3 lines. It answers why, never what.
+- Never restate the changed-file list. Never cite how many tests passed.
+- If the diff already reads clearly on its own, write the subject alone.
 - Keep unrelated changes in separate commits.
 - Stage only the intended files. Never commit secrets, `graphify-out/`, or `.dart_tool/`.

@@ -108,6 +108,13 @@ void main() {
       }
     });
 
+    test('add widget rejects an unknown name with exit 64', () {
+      // No manifest here: parser accepts the shape, then runAdd validates.
+      final result = runCli(['add', 'widget', '--not-a-real-flag']);
+
+      expect(result.exitCode, 64);
+    });
+
     test('preset subcommands are parseable', () {
       const subcommands = <String>[
         'list',

@@ -187,6 +187,17 @@ agents remove pagination
 
 This is different from `agents uninstall`, which removes the entire CLI-managed rule installation.
 
+## Shared widgets
+
+Scaffold a built-in shared widget into the project shared folder (`sharedRoot/widgets/`):
+
+```bash
+agents add widget text
+agents add widget spacing
+```
+
+`text` writes `CustomText` (theme-aware default text with `FontAppSize`/`FontAppWeight` scales). `spacing` writes the single `AppSpacing` widget backed by the `gap` package, which is added to `pubspec.yaml` automatically. Files are CLI-managed and the role mapping (`Text`/`Spacing`) is recorded in `PROJECT-STACK.md` so agents use them as defaults.
+
 ## Safe sync and uninstall
 
 `.agents-manifest` is JSON and stores SHA-256 for every CLI-managed file.

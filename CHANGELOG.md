@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add `agents add widget <text|spacing>` to scaffold `CustomText` and `AppSpacing` into the project shared folder, record the role mapping, and auto-add the `gap` package for spacing.
+
 - Generate `docs/rules/STYLE.md` and load it for naming or widget-extraction tasks.
 - Require a bootstrap observer in the `flutter_bloc`, `go_router`, and `flutter_modular` profiles.
 

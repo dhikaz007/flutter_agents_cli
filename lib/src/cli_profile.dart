@@ -6,12 +6,14 @@ import 'package:args/args.dart';
 
 import 'cli_output.dart';
 import 'context_planner.dart';
+import 'dependency_manager.dart';
 import 'detector.dart';
 import 'generator.dart';
 import 'manifest.dart';
 import 'prompts.dart';
 import 'registry.dart';
 import 'rule_store.dart';
+import 'widget_store.dart';
 
 Future<void> runAdd(Directory root, ArgResults command) async {
   final args = command.rest;
@@ -21,6 +23,10 @@ Future<void> runAdd(Directory root, ArgResults command) async {
     return;
   }
   final kind = args[0];
+  if (kind == 'widget') {
+    await _runAddWidget(root, args.sublist(1));
+    return;
+  }
   final profile = args[1];
   if (!ProfileRegistry.supports(kind, profile)) {
     stderr.writeln('Unsupported profile: $kind/$profile');
@@ -42,6 +48,39 @@ Future<void> runAdd(Directory root, ArgResults command) async {
   }
   final report = await RuleGenerator().apply(root, c);
   printGenerationReport(report);
+}
+
+Future<void> _runAddWidget(Directory root, List<String> args) async {
+  if (args.isEmpty) {
+    stderr.writeln('Usage: agents add widget <${WidgetStore.names.join('|')}>');
+    exitCode = 64;
+    return;
+  }
+  final name = args.first;
+  if (!WidgetStore.supports(name)) {
+    stderr.writeln('Unknown widget: $name');
+    stderr.writeln('Available: ${WidgetStore.names.join(', ')}');
+    exitCode = 64;
+    return;
+  }
+  final manifest = ManifestStore().load(root);
+  if (manifest == null) {
+    stderr.writeln('Run `agents init` first.');
+    exitCode = 1;
+    return;
+  }
+  final c = manifest.config.copy();
+  final rel = await WidgetStore().add(root, c, name);
+  final spec = WidgetStore.widgets[name]!;
+  if (spec.package != null &&
+      !DependencyManager().installed(root).contains(spec.package)) {
+    await DependencyManager().run(root, <String>['pub', 'add', spec.package!]);
+  }
+  // force: true records the file this command just wrote as managed;
+  // the bytes match the template, so no user content is overwritten.
+  final report = await RuleGenerator().apply(root, c, force: true);
+  printGenerationReport(report);
+  stdout.writeln('Added widget: $rel (${spec.className})');
 }
 
 Future<void> runRemove(Directory root, ArgResults command) async {

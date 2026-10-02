@@ -6,6 +6,7 @@ import 'package:path/path.dart' as p;
 
 import 'manifest.dart';
 import 'models.dart';
+import 'widget_store.dart';
 import 'rule_store.dart';
 import 'rule_mapper.dart';
 import 'ruleset_store.dart';
@@ -133,6 +134,19 @@ class RuleGenerator {
     }
 
     desired['docs/PROJECT-STACK.md'] = utf8.encode(_projectStack(config));
+
+    final widgetTemplates = Directory(p.join(templates.path, 'widgets'));
+    if (widgetTemplates.existsSync()) {
+      for (final entry in config.uiComponents.entries) {
+        final spec = WidgetStore.byRole(entry.key, entry.value);
+        if (spec == null) continue;
+        final source = File(p.join(widgetTemplates.path, spec.file));
+        if (!source.existsSync()) continue;
+        final shared = config.sharedRoot ?? 'lib/shared';
+        desired[p.join(shared, 'widgets', p.basename(spec.file))] =
+            source.readAsBytesSync();
+      }
+    }
 
     final userRules = UserRuleStore();
     for (final entry in config.rules.entries) {

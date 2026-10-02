@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 2.2.0
+
 - Install active profile files during init/sync so `agents doctor` no longer reports missing profiles after `--rule-source template`.
 - Add `agents add widget <text|spacing>` to scaffold `CustomText` and `AppSpacing` into the project shared folder, record the role mapping, and auto-add the `gap` package for spacing.
 - Generate `docs/rules/STYLE.md` and load it for naming or widget-extraction tasks.

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 2.3.0
+
 - Require `GestureDetector` with `HitTestBehavior.translucent` over `InkWell` for custom tap handling in `docs/rules/UI.md`.
 
 ## 2.2.1

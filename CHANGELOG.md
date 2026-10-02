@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Require `GestureDetector` with `HitTestBehavior.translucent` over `InkWell` for custom tap handling in `docs/rules/UI.md`.
+
 ## 2.2.1
 
 - Keep template profiles out of dynamic ruleset projects so `agents doctor` checks the selected profile under `docs/dynamic-rules/` instead.

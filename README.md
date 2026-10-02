@@ -480,6 +480,8 @@ Generated projects receive the same rule as `docs/rules/COMMIT.md`, loaded only 
 
 Generated projects also receive `docs/rules/STYLE.md` for class/constant/helper/extension naming and widget structure, loaded only for naming or extraction tasks. The `flutter_bloc`, `go_router`, and `flutter_modular` profiles require a single bootstrap observer (`AppBlocObserver` / route observer) for logging.
 
+`docs/rules/UI.md` requires `GestureDetector` with `HitTestBehavior.translucent` instead of `InkWell` for custom tap handling, because `InkWell` needs a `Material` ancestor and its splash stays invisible over transparent or non-`Material` surfaces.
+
 Run before release:
 
 ```bash

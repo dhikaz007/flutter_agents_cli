@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 2.2.1
+
 - Keep template profiles out of dynamic ruleset projects so `agents doctor` checks the selected profile under `docs/dynamic-rules/` instead.
 
 ## 2.2.0

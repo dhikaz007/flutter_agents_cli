@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 2.4.1
+
+- Stop a directly constructed `StackConfig` from throwing `Cannot modify unmodifiable map` when the generator maps project rules.
+- Derive `docs/profiles` folder cleanup from the profile registry instead of a hand-kept list, so a new concern no longer leaves an empty folder behind.
+
 ## 2.4.0
 
 - Use a widget's built-in tap callback directly (`ListTile(onTap: ...)`) in `docs/rules/UI.md` instead of wrapping it in another tap widget.

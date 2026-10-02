@@ -368,6 +368,7 @@ project/
 ```
 
 Unused profiles are not copied into the project.
+Only the active profile for each concern is installed during init/sync, so `agents doctor` can verify every profile the stack selects.
 
 ## Source-of-truth model
 

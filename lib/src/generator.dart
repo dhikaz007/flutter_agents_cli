@@ -6,6 +6,7 @@ import 'package:path/path.dart' as p;
 
 import 'manifest.dart';
 import 'models.dart';
+import 'registry.dart';
 import 'widget_store.dart';
 import 'rule_store.dart';
 import 'rule_mapper.dart';
@@ -134,6 +135,17 @@ class RuleGenerator {
     }
 
     desired['docs/PROJECT-STACK.md'] = utf8.encode(_projectStack(config));
+
+    for (final key in config.profileKeys) {
+      final parts = key.split(':');
+      final rel = ProfileRegistry.profilePath(
+        parts.first,
+        parts.sublist(1).join(':'),
+      );
+      final source =
+          File(p.join(templates.path, rel.substring('docs/'.length)));
+      if (source.existsSync()) desired[rel] = source.readAsBytesSync();
+    }
 
     final widgetTemplates = Directory(p.join(templates.path, 'widgets'));
     if (widgetTemplates.existsSync()) {

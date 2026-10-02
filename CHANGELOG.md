@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Keep template profiles out of dynamic ruleset projects so `agents doctor` checks the selected profile under `docs/dynamic-rules/` instead.
+
 ## 2.2.0
 
 - Install active profile files during init/sync so `agents doctor` no longer reports missing profiles after `--rule-source template`.

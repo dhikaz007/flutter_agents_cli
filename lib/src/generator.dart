@@ -136,15 +136,18 @@ class RuleGenerator {
 
     desired['docs/PROJECT-STACK.md'] = utf8.encode(_projectStack(config));
 
-    for (final key in config.profileKeys) {
-      final parts = key.split(':');
-      final rel = ProfileRegistry.profilePath(
-        parts.first,
-        parts.sublist(1).join(':'),
-      );
-      final source =
-          File(p.join(templates.path, rel.substring('docs/'.length)));
-      if (source.existsSync()) desired[rel] = source.readAsBytesSync();
+    // Dynamic rulesets keep every profile under docs/dynamic-rules/ only.
+    if (config.ruleset == null) {
+      for (final key in config.profileKeys) {
+        final parts = key.split(':');
+        final rel = ProfileRegistry.profilePath(
+          parts.first,
+          parts.sublist(1).join(':'),
+        );
+        final source =
+            File(p.join(templates.path, rel.substring('docs/'.length)));
+        if (source.existsSync()) desired[rel] = source.readAsBytesSync();
+      }
     }
 
     final widgetTemplates = Directory(p.join(templates.path, 'widgets'));

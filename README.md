@@ -368,7 +368,7 @@ project/
 ```
 
 Unused profiles are not copied into the project.
-Only the active profile for each concern is installed during init/sync, so `agents doctor` can verify every profile the stack selects.
+Only the active profile for each concern is installed during init/sync in template mode, so `agents doctor` can verify every profile the stack selects. Dynamic ruleset projects keep every profile under `docs/dynamic-rules/` instead.
 
 ## Source-of-truth model
 

@@ -340,32 +340,48 @@ Future<void> runDoctor(Directory root, {bool fix = false}) async {
     }
   }
 
-  for (final key in manifest.config.profileKeys) {
-    final parts = key.split(':');
-    final kind = parts.first;
-    final value = parts.sublist(1).join(':');
-    final packageRuleKind = _configKindForProfile(kind, value);
-    final packageExpression = ProfileRegistry.packageFor(
-      packageRuleKind,
-      value,
+  final ruleset = manifest.config.ruleset;
+  final rulesetProfile = manifest.config.rulesetProfile;
+  if (ruleset != null && rulesetProfile != null) {
+    final dynamicProfile = Directory(
+      p.join(root.path, 'docs', 'dynamic-rules', 'profiles', rulesetProfile),
     );
-    if (manifest.config.mode == 'existing' && packageExpression != null) {
-      final candidates = packageExpression.split('|');
-      if (!candidates.any(detection.dependencies.contains)) {
-        stdout.writeln(
-          '! $packageRuleKind=$value is documented but package not detected in pubspec.yaml',
-        );
-        warnings++;
-      }
-    }
-    final profile = File(
-      p.join(root.path, ProfileRegistry.profilePath(packageRuleKind, value)),
-    );
-    if (!profile.existsSync()) {
+    if (dynamicProfile.existsSync()) {
+      stdout.writeln('✓ active dynamic profile: $rulesetProfile');
+    } else {
       stdout.writeln(
-        '✗ active profile missing: ${p.relative(profile.path, from: root.path)}',
+        '✗ active profile missing: docs/dynamic-rules/profiles/$rulesetProfile',
       );
       errors++;
+    }
+  } else {
+    for (final key in manifest.config.profileKeys) {
+      final parts = key.split(':');
+      final kind = parts.first;
+      final value = parts.sublist(1).join(':');
+      final packageRuleKind = _configKindForProfile(kind, value);
+      final packageExpression = ProfileRegistry.packageFor(
+        packageRuleKind,
+        value,
+      );
+      if (manifest.config.mode == 'existing' && packageExpression != null) {
+        final candidates = packageExpression.split('|');
+        if (!candidates.any(detection.dependencies.contains)) {
+          stdout.writeln(
+            '! $packageRuleKind=$value is documented but package not detected in pubspec.yaml',
+          );
+          warnings++;
+        }
+      }
+      final profile = File(
+        p.join(root.path, ProfileRegistry.profilePath(packageRuleKind, value)),
+      );
+      if (!profile.existsSync()) {
+        stdout.writeln(
+          '✗ active profile missing: ${p.relative(profile.path, from: root.path)}',
+        );
+        errors++;
+      }
     }
   }
 

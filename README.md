@@ -344,6 +344,8 @@ project/
     │   ├── SECURITY.md
     │   ├── TESTING.md
     │   ├── CODEGEN.md
+    │   ├── COMMIT.md
+    │   ├── STYLE.md
     │   └── WORKFLOW.md
     └── profiles/
         ├── architecture/<active>.md
@@ -463,6 +465,8 @@ Format `[<ACTION>]: <subject>`, subject at most 72 characters, with no period at
 Body is optional and at most 3 lines. It answers why, never what. Do not restate the changed-file list and do not cite how many tests passed. If the diff already reads clearly on its own, write the subject alone.
 
 Generated projects receive the same rule as `docs/rules/COMMIT.md`, loaded only when a task mentions committing.
+
+Generated projects also receive `docs/rules/STYLE.md` for class/constant/helper/extension naming and widget structure, loaded only for naming or extraction tasks. The `flutter_bloc`, `go_router`, and `flutter_modular` profiles require a single bootstrap observer (`AppBlocObserver` / route observer) for logging.
 
 Run before release:
 

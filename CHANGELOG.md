@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Generate `docs/rules/STYLE.md` and load it for naming or widget-extraction tasks.
+- Require a bootstrap observer in the `flutter_bloc`, `go_router`, and `flutter_modular` profiles.
+
 - Generate `docs/rules/COMMIT.md` and load it for commit-related tasks, enforcing a `[<ACTION>]: <subject>` subject of at most 72 characters with an optional why-only body.
 
 ## 2.1.10

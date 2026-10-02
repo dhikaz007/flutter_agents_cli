@@ -114,4 +114,30 @@ void main() {
     expect(plan.concerns, contains('routing'));
     expect(plan.concerns, isNot(contains('commit')));
   });
+
+  test('loads the style rule for a naming request', () {
+    File('${root.path}/docs/rules/STYLE.md')
+      ..createSync(recursive: true)
+      ..writeAsStringSync('# Style');
+
+    final plan = ContextPlanner().plan(
+      root,
+      config,
+      'buat AppColors dengan abstract final class',
+    );
+
+    expect(plan.concerns, contains('style'));
+    expect(plan.files, contains('docs/rules/STYLE.md'));
+  });
+
+  test('plain widget work does not pull in the style rule', () {
+    File('${root.path}/docs/rules/STYLE.md')
+      ..createSync(recursive: true)
+      ..writeAsStringSync('# Style');
+
+    final plan = ContextPlanner().plan(root, config, 'tambah widget checkout');
+
+    expect(plan.concerns, equals(<String>{'ui'}));
+    expect(plan.files, isNot(contains('docs/rules/STYLE.md')));
+  });
 }

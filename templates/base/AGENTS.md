@@ -68,6 +68,7 @@ Load only the active profile/rule for a concern actually touched by the implemen
 - model codegen → active `docs/profiles/codegen/*.md`
 - pagination → active `docs/profiles/pagination/*.md`
 - UI/component work → `docs/rules/UI.md`
+- class/constant/helper/extension naming or widget extraction → `docs/rules/STYLE.md`
 - credentials/tokens/authentication or authorization flow/password rules/secure storage/destructive or sensitive operation → `docs/rules/SECURITY.md`
 - tests → `docs/rules/TESTING.md`
 - generation → `docs/rules/CODEGEN.md`

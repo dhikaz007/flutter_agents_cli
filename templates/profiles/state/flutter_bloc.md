@@ -6,4 +6,6 @@
 - If Freezed is active, follow the project's Freezed state pattern and generated code workflow.
 - Cubit/Bloc lifecycle follows the complete navigation flow: page-owned state is created for that ownership scope; intentionally reused state keeps the same instance using the project's provider/DI convention.
 - Guard duplicate mutation submits in state/business logic as well as UI.
+- Register one `AppBlocObserver extends BlocObserver` at bootstrap (`Bloc.observer = ...` in `main()` before `runApp`); log transitions and errors only, never navigate or do I/O inside the observer.
+- Observer file is snake_case of the class (`AppBlocObserver` → `app_bloc_observer.dart`) under the app-level shared folder (`core/` or equivalent); never in `helpers/` or beside extensions.
 - After awaited UI work, check mounted state before using context.

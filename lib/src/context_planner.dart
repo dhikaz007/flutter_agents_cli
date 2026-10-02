@@ -128,6 +128,21 @@ class ContextPlanner {
     ])) {
       concerns.add('testing');
     }
+    if (any(<String>[
+      'style',
+      'naming',
+      'convention',
+      'abstract final',
+      'static class',
+      'utility class',
+      'helper',
+      'extension',
+      'extract widget',
+      'stateless',
+      'stateful',
+    ])) {
+      concerns.add('style');
+    }
     // 'push' and 'pop' are deliberately absent: they already belong to the
     // routing concern, so git intent cannot be told apart from navigation.
     if (any(<String>[
@@ -183,6 +198,7 @@ class ContextPlanner {
     if (concerns.contains('security')) addIfExists('docs/rules/SECURITY.md');
     if (concerns.contains('testing')) addIfExists('docs/rules/TESTING.md');
     if (concerns.contains('codegen')) addIfExists('docs/rules/CODEGEN.md');
+    if (concerns.contains('style')) addIfExists('docs/rules/STYLE.md');
     if (concerns.contains('commit')) addIfExists('docs/rules/COMMIT.md');
     if (concerns.contains('workflow')) addIfExists('docs/rules/WORKFLOW.md');
 

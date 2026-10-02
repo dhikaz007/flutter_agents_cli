@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 2.4.0
+
 - Use a widget's built-in tap callback directly (`ListTile(onTap: ...)`) in `docs/rules/UI.md` instead of wrapping it in another tap widget.
 
 ## 2.3.0

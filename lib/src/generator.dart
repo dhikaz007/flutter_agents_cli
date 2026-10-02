@@ -392,19 +392,10 @@ class RuleGenerator {
 
   void _deleteEmptyManagedDirectories(Directory project) {
     final candidates = <String>[
-      'docs/profiles/architecture',
-      'docs/profiles/state',
-      'docs/profiles/routing',
-      'docs/profiles/di',
-      'docs/profiles/network',
-      'docs/profiles/storage',
-      'docs/profiles/localization',
-      'docs/profiles/assets',
-      'docs/profiles/loading',
-      'docs/profiles/codegen',
-      'docs/profiles/pagination',
-      'docs/profiles',
-      'docs/custom-rules',
+      for (final folder in ProfileRegistry.profileFolders)
+        p.join('docs', 'profiles', folder),
+      p.join('docs', 'profiles'),
+      p.join('docs', 'custom-rules'),
     ];
     for (final rel in candidates) {
       final dir = Directory(p.join(project.path, rel));

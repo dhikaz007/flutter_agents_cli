@@ -30,7 +30,7 @@ class PresetDocument {
   /// `rulesetProfile` are excluded: they are chosen at `init` time, not part of
   /// a preset definition.
   static final Set<String> _allCoreFields = Set<String>.of(PresetIO._configKeys)
-    ..removeAll(<String>{'ruleset', 'rulesetProfile'});
+    ..removeAll(PresetIO._cliOnlyKeys);
 
   StackConfig mergeInto(StackConfig base) {
     final out = base.copy();
@@ -49,68 +49,11 @@ class PresetDocument {
   }
 
   static void _copyField(StackConfig from, StackConfig to, String field) {
-    switch (field) {
-      case 'mode':
-        to.mode = from.mode;
-        break;
-      case 'architecture':
-        to.architecture = from.architecture;
-        break;
-      case 'featureRoot':
-        to.featureRoot = from.featureRoot;
-        break;
-      case 'sharedRoot':
-        to.sharedRoot = from.sharedRoot;
-        break;
-      case 'state':
-        to.state = from.state;
-        break;
-      case 'routing':
-        to.routing = from.routing;
-        break;
-      case 'di':
-        to.di = from.di;
-        break;
-      case 'network':
-        to.network = from.network;
-        break;
-      case 'storage':
-        to.storage = from.storage;
-        break;
-      case 'localization':
-        to.localization = from.localization;
-        break;
-      case 'assets':
-        to.assets = from.assets;
-        break;
-      case 'modelCodegen':
-        to.modelCodegen = from.modelCodegen;
-        break;
-      case 'jsonCodegen':
-        to.jsonCodegen = from.jsonCodegen;
-        break;
-      case 'blockingLoader':
-        to.blockingLoader = from.blockingLoader;
-        break;
-      case 'listLoader':
-        to.listLoader = from.listLoader;
-        break;
-      case 'inlineLoader':
-        to.inlineLoader = from.inlineLoader;
-        break;
-      case 'pagination':
-        to.pagination = from.pagination;
-        break;
-      case 'uiComponents':
-        to.uiComponents = Map<String, String>.from(from.uiComponents);
-        break;
-      case 'ruleset':
-        to.ruleset = from.ruleset;
-        break;
-      case 'rulesetProfile':
-        to.rulesetProfile = from.rulesetProfile;
-        break;
+    if (field == 'uiComponents') {
+      to.uiComponents = Map<String, String>.from(from.uiComponents);
+      return;
     }
+    StackConfig.fields[field]?.write(to, StackConfig.fields[field]!.read(from));
   }
 }
 
@@ -301,51 +244,25 @@ class PresetIO {
 
   /// Every key a preset YAML may carry. Single source of truth for the field
   /// lists used by [PresetDocument.isPartial], built-in resolution, reading a
-  /// user preset, and export.
-  static const Set<String> _configKeys = <String>{
-    'mode',
-    'architecture',
-    'featureRoot',
-    'sharedRoot',
-    'state',
-    'routing',
-    'di',
-    'network',
-    'storage',
-    'localization',
-    'assets',
-    'modelCodegen',
-    'jsonCodegen',
-    'blockingLoader',
-    'listLoader',
-    'inlineLoader',
-    'pagination',
+  /// user preset, and export. Scalar keys come from [StackConfig.fields];
+  /// `uiComponents` is the only map-valued key.
+  static final Set<String> _configKeys = <String>{
+    ...StackConfig.fields.keys,
     'uiComponents',
-    'ruleset',
-    'rulesetProfile',
   };
 
   /// Keys holding a plain `String?` value, in export order. Everything else in
   /// [_configKeys] is either a map (`uiComponents`) or only settable by the CLI.
-  static const List<String> _scalarConfigKeys = <String>[
-    'mode',
-    'architecture',
-    'featureRoot',
-    'sharedRoot',
-    'state',
-    'routing',
-    'di',
-    'network',
-    'storage',
-    'localization',
-    'assets',
-    'modelCodegen',
-    'jsonCodegen',
-    'blockingLoader',
-    'listLoader',
-    'inlineLoader',
-    'pagination',
+  static final List<String> _scalarConfigKeys = <String>[
+    for (final key in StackConfig.fields.keys)
+      if (!_cliOnlyKeys.contains(key)) key,
   ];
+
+  /// Scalar keys the CLI owns at `init` time, so a preset never exports them.
+  static const Set<String> _cliOnlyKeys = <String>{
+    'ruleset',
+    'rulesetProfile',
+  };
 
   String _quoteIfNeeded(String value) {
     if (RegExp(r'^[A-Za-z0-9_./-]+$').hasMatch(value)) return value;
@@ -353,45 +270,8 @@ class PresetIO {
   }
 
   /// Reads a scalar config field by name, for [_scalarConfigKeys] iteration.
-  static String? _scalarValue(StackConfig c, String key) {
-    switch (key) {
-      case 'mode':
-        return c.mode;
-      case 'architecture':
-        return c.architecture;
-      case 'featureRoot':
-        return c.featureRoot;
-      case 'sharedRoot':
-        return c.sharedRoot;
-      case 'state':
-        return c.state;
-      case 'routing':
-        return c.routing;
-      case 'di':
-        return c.di;
-      case 'network':
-        return c.network;
-      case 'storage':
-        return c.storage;
-      case 'localization':
-        return c.localization;
-      case 'assets':
-        return c.assets;
-      case 'modelCodegen':
-        return c.modelCodegen;
-      case 'jsonCodegen':
-        return c.jsonCodegen;
-      case 'blockingLoader':
-        return c.blockingLoader;
-      case 'listLoader':
-        return c.listLoader;
-      case 'inlineLoader':
-        return c.inlineLoader;
-      case 'pagination':
-        return c.pagination;
-    }
-    return null;
-  }
+  static String? _scalarValue(StackConfig c, String key) =>
+      StackConfig.fields[key]?.read(c);
 
   String _quote(String value) =>
       '"${value.replaceAll('\\', '\\\\').replaceAll('"', '\\"')}"';

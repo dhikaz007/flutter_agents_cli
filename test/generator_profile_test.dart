@@ -45,6 +45,40 @@ void main() {
     }
   });
 
+  test('removes profile folders left empty by a removed concern', () async {
+    final project = Directory.systemTemp.createTempSync('agents-profile-test-');
+    try {
+      await RuleGenerator().apply(
+        project,
+        StackConfig(
+          mode: 'new',
+          architecture: 'feature_first_simple',
+          state: 'flutter_bloc',
+        ),
+      );
+      expect(
+        Directory('${project.path}/docs/profiles/state').existsSync(),
+        isTrue,
+      );
+
+      // Dropping every concern must leave no empty managed folder behind.
+      await RuleGenerator().apply(project, StackConfig(mode: 'new'));
+
+      expect(
+        Directory('${project.path}/docs/profiles/state').existsSync(),
+        isFalse,
+        reason: 'state folder should be gone once no state profile is active',
+      );
+      expect(
+        Directory('${project.path}/docs/profiles').existsSync(),
+        isFalse,
+        reason: 'docs/profiles should be gone once no profile is active',
+      );
+    } finally {
+      project.deleteSync(recursive: true);
+    }
+  });
+
   test('dynamic ruleset profiles stay out of docs/profiles', () async {
     final project = Directory.systemTemp.createTempSync('agents-profile-test-');
     final store = RulesetStore();

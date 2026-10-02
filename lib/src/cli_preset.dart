@@ -377,7 +377,7 @@ void _printConfig(StackConfig c) {
 
 void _setPresetKind(PresetDocument document, String kind, String? selected) {
   document.config.setKind(kind, selected);
-  final field = _fieldForKind(kind);
+  final field = StackConfig.kindFields[kind]!;
   document.fields.add(field);
   if (kind == 'architecture') {
     document.config.featureRoot = null;
@@ -390,45 +390,13 @@ void _setPresetKind(PresetDocument document, String kind, String? selected) {
 
 void _unsetPresetKind(PresetDocument document, String kind) {
   document.config.setKind(kind, null);
-  document.fields.remove(_fieldForKind(kind));
+  document.fields.remove(StackConfig.kindFields[kind]!);
   if (kind == 'architecture') {
     document.config.featureRoot = null;
     document.config.sharedRoot = null;
     document.fields.remove('featureRoot');
     document.fields.remove('sharedRoot');
   }
-}
-
-String _fieldForKind(String kind) {
-  switch (kind) {
-    case 'architecture':
-      return 'architecture';
-    case 'state':
-      return 'state';
-    case 'routing':
-      return 'routing';
-    case 'di':
-      return 'di';
-    case 'network':
-      return 'network';
-    case 'storage':
-      return 'storage';
-    case 'localization':
-      return 'localization';
-    case 'assets':
-      return 'assets';
-    case 'codegen':
-      return 'modelCodegen';
-    case 'loading-blocking':
-      return 'blockingLoader';
-    case 'loading-list':
-      return 'listLoader';
-    case 'loading-inline':
-      return 'inlineLoader';
-    case 'pagination':
-      return 'pagination';
-  }
-  throw ArgumentError('Unknown profile kind: $kind');
 }
 
 void _editPresetRules(PresetDocument document, {required bool onlyAsk}) {

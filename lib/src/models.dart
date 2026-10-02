@@ -24,7 +24,16 @@ class StackConfig {
     this.rulesetProfile,
     this.ruleMappings = const <String, String>{},
     this.dynamicRules = const <String>[],
-  });
+  }) {
+    // The generator and init mutate these collections in place, so a config
+    // owns mutable copies. Copying also stops a caller's map from being
+    // aliased and changed behind the config's back.
+    this.observedStructure = List<String>.of(observedStructure);
+    this.uiComponents = Map<String, String>.of(uiComponents);
+    this.rules = Map<String, String>.of(rules);
+    this.ruleMappings = Map<String, String>.of(ruleMappings);
+    this.dynamicRules = List<String>.of(dynamicRules);
+  }
 
   String mode;
   String? architecture;
@@ -156,82 +165,76 @@ class StackConfig {
       ];
 
   String? valueForKind(String kind) {
-    switch (kind) {
-      case 'architecture':
-        return architecture;
-      case 'state':
-        return state;
-      case 'routing':
-        return routing;
-      case 'di':
-        return di;
-      case 'network':
-        return network;
-      case 'storage':
-        return storage;
-      case 'localization':
-        return localization;
-      case 'assets':
-        return assets;
-      case 'codegen':
-        return modelCodegen;
-      case 'loading-blocking':
-        return blockingLoader;
-      case 'loading-list':
-        return listLoader;
-      case 'loading-inline':
-        return inlineLoader;
-      case 'pagination':
-        return pagination;
-    }
-    return null;
+    final field = kindFields[kind];
+    return field == null ? null : fields[field]!.read(this);
   }
 
   void setKind(String kind, String? value) {
-    switch (kind) {
-      case 'architecture':
-        architecture = value;
-        break;
-      case 'state':
-        state = value;
-        break;
-      case 'routing':
-        routing = value;
-        break;
-      case 'di':
-        di = value;
-        break;
-      case 'network':
-        network = value;
-        break;
-      case 'storage':
-        storage = value;
-        break;
-      case 'localization':
-        localization = value;
-        break;
-      case 'assets':
-        assets = value;
-        break;
-      case 'codegen':
-        modelCodegen = value;
-        break;
-      case 'loading-blocking':
-        blockingLoader = value;
-        break;
-      case 'loading-list':
-        listLoader = value;
-        break;
-      case 'loading-inline':
-        inlineLoader = value;
-        break;
-      case 'pagination':
-        pagination = value;
-        break;
-      default:
-        throw ArgumentError('Unknown profile kind: $kind');
-    }
+    final field = kindFields[kind];
+    if (field == null) throw ArgumentError('Unknown profile kind: $kind');
+    fields[field]!.write(this, value);
   }
+
+  /// Profile kind -> the config field that stores it. Kinds are the CLI-facing
+  /// names (`codegen`, `loading-list`); fields are the Dart field names
+  /// (`modelCodegen`, `listLoader`).
+  static const Map<String, String> kindFields = <String, String>{
+    'architecture': 'architecture',
+    'state': 'state',
+    'routing': 'routing',
+    'di': 'di',
+    'network': 'network',
+    'storage': 'storage',
+    'localization': 'localization',
+    'assets': 'assets',
+    'codegen': 'modelCodegen',
+    'loading-blocking': 'blockingLoader',
+    'loading-list': 'listLoader',
+    'loading-inline': 'inlineLoader',
+    'pagination': 'pagination',
+  };
+
+  /// Read/write access to every scalar config field, in preset export order.
+  /// One table so field access has a single owner instead of a switch per
+  /// call site. `uiComponents` is absent: it holds a map, not a scalar.
+  static final Map<String, ConfigField> fields = <String, ConfigField>{
+    'mode': ConfigField((c) => c.mode, (c, v) => c.mode = v ?? c.mode),
+    'architecture':
+        ConfigField((c) => c.architecture, (c, v) => c.architecture = v),
+    'featureRoot':
+        ConfigField((c) => c.featureRoot, (c, v) => c.featureRoot = v),
+    'sharedRoot': ConfigField((c) => c.sharedRoot, (c, v) => c.sharedRoot = v),
+    'state': ConfigField((c) => c.state, (c, v) => c.state = v),
+    'routing': ConfigField((c) => c.routing, (c, v) => c.routing = v),
+    'di': ConfigField((c) => c.di, (c, v) => c.di = v),
+    'network': ConfigField((c) => c.network, (c, v) => c.network = v),
+    'storage': ConfigField((c) => c.storage, (c, v) => c.storage = v),
+    'localization':
+        ConfigField((c) => c.localization, (c, v) => c.localization = v),
+    'assets': ConfigField((c) => c.assets, (c, v) => c.assets = v),
+    'modelCodegen':
+        ConfigField((c) => c.modelCodegen, (c, v) => c.modelCodegen = v),
+    'jsonCodegen':
+        ConfigField((c) => c.jsonCodegen, (c, v) => c.jsonCodegen = v),
+    'blockingLoader':
+        ConfigField((c) => c.blockingLoader, (c, v) => c.blockingLoader = v),
+    'listLoader': ConfigField((c) => c.listLoader, (c, v) => c.listLoader = v),
+    'inlineLoader':
+        ConfigField((c) => c.inlineLoader, (c, v) => c.inlineLoader = v),
+    'pagination': ConfigField((c) => c.pagination, (c, v) => c.pagination = v),
+    'ruleset': ConfigField((c) => c.ruleset, (c, v) => c.ruleset = v),
+    'rulesetProfile':
+        ConfigField((c) => c.rulesetProfile, (c, v) => c.rulesetProfile = v),
+  };
+}
+
+/// Read and write access to one scalar [StackConfig] field, so callers can
+/// work with a field by name without a switch per call site.
+class ConfigField {
+  const ConfigField(this.read, this.write);
+
+  final String? Function(StackConfig config) read;
+  final void Function(StackConfig config, String? value) write;
 }
 
 class DetectionResult {

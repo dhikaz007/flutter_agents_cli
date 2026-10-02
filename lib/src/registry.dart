@@ -28,10 +28,17 @@ class ProfileRegistry {
     'pagination': <String>['infinite_scroll_pagination'],
   };
 
-  static String profilePath(String kind, String name) {
-    final folderKind = kind.startsWith('loading-') ? 'loading' : kind;
-    return 'docs/profiles/$folderKind/$name.md';
-  }
+  /// Folder holding a kind's profiles. The three loading roles share one.
+  static String folderForKind(String kind) =>
+      kind.startsWith('loading-') ? 'loading' : kind;
+
+  /// Every `docs/profiles/` folder [options] can install. Derived, not
+  /// hand-kept, so a new kind is cleaned up without a second edit.
+  static List<String> get profileFolders =>
+      <String>{for (final kind in options.keys) folderForKind(kind)}.toList();
+
+  static String profilePath(String kind, String name) =>
+      'docs/profiles/${folderForKind(kind)}/$name.md';
 
   static bool supports(String kind, String name) =>
       options[kind]?.contains(name) ?? false;

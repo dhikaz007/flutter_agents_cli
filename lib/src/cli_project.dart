@@ -340,49 +340,15 @@ Future<void> runDoctor(Directory root, {bool fix = false}) async {
     }
   }
 
-  final ruleset = manifest.config.ruleset;
+  // Dynamic rulesets document their profile under docs/dynamic-rules; only
+  // template stacks use docs/profiles. Only one of the two applies.
   final rulesetProfile = manifest.config.rulesetProfile;
-  if (ruleset != null && rulesetProfile != null) {
-    final dynamicProfile = Directory(
-      p.join(root.path, 'docs', 'dynamic-rules', 'profiles', rulesetProfile),
-    );
-    if (dynamicProfile.existsSync()) {
-      stdout.writeln('✓ active dynamic profile: $rulesetProfile');
-    } else {
-      stdout.writeln(
-        '✗ active profile missing: docs/dynamic-rules/profiles/$rulesetProfile',
-      );
-      errors++;
-    }
+  if (manifest.config.ruleset != null && rulesetProfile != null) {
+    errors += _checkDynamicProfile(root, rulesetProfile);
   } else {
-    for (final key in manifest.config.profileKeys) {
-      final parts = key.split(':');
-      final kind = parts.first;
-      final value = parts.sublist(1).join(':');
-      final packageRuleKind = _configKindForProfile(kind, value);
-      final packageExpression = ProfileRegistry.packageFor(
-        packageRuleKind,
-        value,
-      );
-      if (manifest.config.mode == 'existing' && packageExpression != null) {
-        final candidates = packageExpression.split('|');
-        if (!candidates.any(detection.dependencies.contains)) {
-          stdout.writeln(
-            '! $packageRuleKind=$value is documented but package not detected in pubspec.yaml',
-          );
-          warnings++;
-        }
-      }
-      final profile = File(
-        p.join(root.path, ProfileRegistry.profilePath(packageRuleKind, value)),
-      );
-      if (!profile.existsSync()) {
-        stdout.writeln(
-          '✗ active profile missing: ${p.relative(profile.path, from: root.path)}',
-        );
-        errors++;
-      }
-    }
+    final found = _checkTemplateProfiles(root, manifest.config, detection);
+    errors += found.errors;
+    warnings += found.warnings;
   }
 
   final projectRules = File(
@@ -395,6 +361,60 @@ Future<void> runDoctor(Directory root, {bool fix = false}) async {
   for (final note in detection.notes) stdout.writeln('i $note');
   stdout.writeln('\nResult: $errors error(s), $warnings warning(s).');
   if (errors > 0) exitCode = 1;
+}
+
+/// Errors from a missing Dynamic Rules profile directory.
+int _checkDynamicProfile(Directory root, String profile) {
+  final dir = Directory(
+    p.join(root.path, 'docs', 'dynamic-rules', 'profiles', profile),
+  );
+  if (dir.existsSync()) {
+    stdout.writeln('✓ active dynamic profile: $profile');
+    return 0;
+  }
+  stdout.writeln(
+      '✗ active profile missing: docs/dynamic-rules/profiles/$profile');
+  return 1;
+}
+
+/// Verifies every active template profile file exists, and that an existing
+/// project actually declares the package each profile expects.
+({int errors, int warnings}) _checkTemplateProfiles(
+  Directory root,
+  StackConfig config,
+  DetectionResult detection,
+) {
+  var errors = 0;
+  var warnings = 0;
+  for (final key in config.profileKeys) {
+    final parts = key.split(':');
+    final kind = parts.first;
+    final value = parts.sublist(1).join(':');
+    final packageRuleKind = _configKindForProfile(kind, value);
+    final packageExpression = ProfileRegistry.packageFor(
+      packageRuleKind,
+      value,
+    );
+    if (config.mode == 'existing' && packageExpression != null) {
+      final candidates = packageExpression.split('|');
+      if (!candidates.any(detection.dependencies.contains)) {
+        stdout.writeln(
+          '! $packageRuleKind=$value is documented but package not detected in pubspec.yaml',
+        );
+        warnings++;
+      }
+    }
+    final profile = File(
+      p.join(root.path, ProfileRegistry.profilePath(packageRuleKind, value)),
+    );
+    if (!profile.existsSync()) {
+      stdout.writeln(
+        '✗ active profile missing: ${p.relative(profile.path, from: root.path)}',
+      );
+      errors++;
+    }
+  }
+  return (errors: errors, warnings: warnings);
 }
 
 String _configKindForProfile(String profileKind, String value) {

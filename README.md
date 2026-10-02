@@ -489,6 +489,8 @@ dart analyze
 dart test
 ```
 
+After every commit+push, release in the same flow: bump `version:` in `pubspec.yaml` and `cliVersion` in `lib/src/manifest.dart` (semver: `feat` → minor, `fix` → patch), update the README title version, move `## Unreleased` entries to a new `## X.Y.Z` heading in `CHANGELOG.md`, then commit `[chore]: release X.Y.Z` and push branch plus annotated tag `vX.Y.Z`. The tag triggers `.github/workflows/release.yml`.
+
 ## Custom rules (v1.1)
 
 You can keep your own detailed conventions globally and let projects use them without editing CLI source.

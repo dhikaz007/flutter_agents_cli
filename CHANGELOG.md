@@ -2,6 +2,25 @@
 
 ## Unreleased
 
+- Generate `docs/rules/PERFORMANCE.md` and load it for a reported or measured performance problem, covering `const` subtrees, lazy list building, stable keys, image decode sizing, and repaint isolation.
+- Generate `docs/rules/ACCESSIBILITY.md` and load it for semantics, screen readers, contrast, tap targets, text scaling, and inclusive-design work.
+- Generate `docs/rules/ERRORS.md` and load it for a Flutter framework error, mapping `RenderFlex overflowed`, unbounded viewport height, `RenderBox was not laid out`, and `setState() called during build` to their cause and fix.
+- Generate `docs/rules/DART3.md` and load it for new Dart 3 data and state shapes: sealed hierarchies, records, pattern matching, and exhaustive switches.
+- Require `group()` named after the class under test, "should" case naming, a fresh subject per test, and an injected clock or id source in `docs/rules/TESTING.md`.
+- Map `docs/rules/COMMIT.md` and `docs/rules/STYLE.md` to the `commit` and `style` concerns, so `COMMIT.md` no longer collides with `TESTING.md` on the word "tests" and the `testing` concern is no longer dropped from `docs/RULES-MAP.md`.
+- Add `change_notifier` as a state profile so a project built on `ChangeNotifier`/`ValueNotifier` no longer falls back to generic state guidance.
+- Add a `json_serializable` codegen profile and a `json-codegen` profile kind. The presets already declared `jsonCodegen`, but no profile existed for it and `profileKeys` never installed one, so the value only ever appeared in `docs/PROJECT-STACK.md`.
+- Install the model codegen and JSON codegen profiles into the shared `docs/profiles/codegen/` folder and load both for a generation task. Neither the Freezed profile nor any codegen profile was routed by `agents context` before this.
+- Require a mocking boundary and `mocktail` fallback-value registration in `docs/rules/TESTING.md`, and require a level-based decision before reaching for an end-to-end test.
+- Add `cloud_firestore` as a storage profile, detected from `cloud_firestore` in `pubspec.yaml`, and route a persistence task to the active storage profile. No storage profile was reachable from `agents context` before this.
+- Generate `docs/rules/FIREBASE.md` with its per-service detail in `docs/rules/references/`, and load it for a Firebase task. The rule states the cross-cutting invariants; the three reference files hold the Firestore, Auth, and observability detail so the always-loaded part stays small.
+- Support `docs/rules/references/` as a progressive-loading folder and exclude it from rule mapping, so a reference file never competes with a rule file for a concern.
+- Add a `firebase` concern with keyword detection in English and Indonesian, and load `docs/PROJECT-STACK.md` with it because Firebase initialization is a stack decision.
+- Enforce generated size budgets in `dart test`: 12,000 characters per rule, reference, and profile file, 200 lines for the `AGENTS.md` router, and 48,000 characters for the always-loaded base context. Also assert every path the router names is installed by a template.
+- Install `tool/hooks/protect-token.sh` and wire it as a Claude Code `PreToolUse` hook through a generated `.claude/settings.json`, so "never log a token" is enforced by the harness instead of only requested in `SECURITY.md`.
+- Start every `AGENTS.md` router row with an explicit "Use when" trigger so the agent matches a concern by intent rather than by folder name.
+- Document that `RuleMapper` concern keys name project rule documents while profile kinds name CLI slots, and assert that a custom rule named after a kind is never mapped as a rule document. The two vocabularies are not merged: `matchesDynamicConcern` compares these keys against concern names owned by external rulesets.
+
 ## 2.4.1
 
 - Stop a directly constructed `StackConfig` from throwing `Cannot modify unmodifiable map` when the generator maps project rules.

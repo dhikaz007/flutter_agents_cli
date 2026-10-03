@@ -143,6 +143,102 @@ class ContextPlanner {
     ])) {
       concerns.add('style');
     }
+    if (any(<String>[
+      'performance',
+      'performa',
+      'jank',
+      'fps',
+      'frame rate',
+      'slow',
+      'lambat',
+      'startup',
+      'cold start',
+      'memory leak',
+      'rebuild',
+      'optimize',
+      'optimization',
+      'optimisasi',
+    ])) {
+      concerns.add('performance');
+    }
+    if (any(<String>[
+      'accessibility',
+      'accessible',
+      'a11y',
+      'wcag',
+      'semantics',
+      'semantik',
+      'screen reader',
+      'talkback',
+      'voiceover',
+      'contrast',
+      'kontras',
+      'tap target',
+      'focus order',
+      'alt text',
+      'caption',
+      'reduced motion',
+      'inclusion',
+      'inclusive',
+      'inklusi',
+    ])) {
+      concerns.add('accessibility');
+    }
+    if (any(<String>[
+      'renderflex',
+      'overflow',
+      'unbounded',
+      'renderbox',
+      'not laid out',
+      'layout error',
+      'render error',
+      'setstate',
+      'scrollcontroller',
+      'multiple scroll views',
+      'exception',
+    ])) {
+      concerns.add('errors');
+    }
+    if (any(<String>[
+      'dart 3',
+      'sealed',
+      'pattern matching',
+      'pattern match',
+      'switch expression',
+      'destructuring',
+      'extension type',
+      'data class',
+      'exhaustive',
+      'record',
+    ])) {
+      concerns.add('dart3');
+    }
+    if (any(<String>[
+      'firebase',
+      'firestore',
+      'crashlytics',
+      'app check',
+      'flutterfire',
+      'realtime database',
+      'remote config',
+    ])) {
+      concerns.add('firebase');
+    }
+    if (any(<String>[
+      'storage',
+      'persist',
+      'persistence',
+      'offline cache',
+      'local database',
+      'sqlite',
+      'drift',
+      'isar',
+      'hive',
+      'shared_preferences',
+      'sharedpreferences',
+    ])) {
+      concerns.add('storage');
+    }
     // 'push' and 'pop' are deliberately absent: they already belong to the
     // routing concern, so git intent cannot be told apart from navigation.
     if (any(<String>[
@@ -181,6 +277,8 @@ class ContextPlanner {
         'routing',
         'di',
         'codegen',
+        'storage',
+        'firebase',
         'workflow',
       }.contains,
     );
@@ -201,6 +299,17 @@ class ContextPlanner {
     if (concerns.contains('style')) addIfExists('docs/rules/STYLE.md');
     if (concerns.contains('commit')) addIfExists('docs/rules/COMMIT.md');
     if (concerns.contains('workflow')) addIfExists('docs/rules/WORKFLOW.md');
+    if (concerns.contains('performance'))
+      addIfExists('docs/rules/PERFORMANCE.md');
+    if (concerns.contains('accessibility')) {
+      addIfExists('docs/rules/ACCESSIBILITY.md');
+    }
+    if (concerns.contains('errors')) addIfExists('docs/rules/ERRORS.md');
+    if (concerns.contains('dart3')) addIfExists('docs/rules/DART3.md');
+    if (concerns.contains('firebase')) addIfExists('docs/rules/FIREBASE.md');
+    if (concerns.contains('storage') && config.storage != null) {
+      addIfExists(ProfileRegistry.profilePath('storage', config.storage!));
+    }
 
     if (concerns.contains('state') && config.state != null) {
       addIfExists(ProfileRegistry.profilePath('state', config.state!));
@@ -231,6 +340,17 @@ class ContextPlanner {
     }
     if (concerns.contains('di') && config.di != null) {
       addIfExists(ProfileRegistry.profilePath('di', config.di!));
+    }
+    if (concerns.contains('codegen')) {
+      if (config.modelCodegen != null) {
+        addIfExists(
+            ProfileRegistry.profilePath('codegen', config.modelCodegen!));
+      }
+      if (config.jsonCodegen != null) {
+        addIfExists(
+          ProfileRegistry.profilePath('json-codegen', config.jsonCodegen!),
+        );
+      }
     }
     if (concerns.contains('network') && config.network != null) {
       addIfExists(ProfileRegistry.profilePath('network', config.network!));

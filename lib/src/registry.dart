@@ -9,7 +9,12 @@ class ProfileRegistry {
       'modular_feature',
       'custom_existing',
     ],
-    'state': <String>['flutter_bloc', 'flutter_riverpod', 'provider'],
+    'state': <String>[
+      'flutter_bloc',
+      'flutter_riverpod',
+      'provider',
+      'change_notifier'
+    ],
     'routing': <String>[
       'go_router',
       'flutter_modular',
@@ -18,19 +23,30 @@ class ProfileRegistry {
     ],
     'di': <String>['injectable_get_it', 'flutter_modular', 'manual'],
     'network': <String>['dio', 'http'],
-    'storage': <String>['hive_ce', 'drift', 'isar', 'shared_preferences'],
+    'storage': <String>[
+      'hive_ce',
+      'drift',
+      'isar',
+      'shared_preferences',
+      'cloud_firestore'
+    ],
     'localization': <String>['easy_localization', 'intl'],
     'assets': <String>['flutter_gen'],
     'codegen': <String>['freezed'],
+    'json-codegen': <String>['json_serializable'],
     'loading-blocking': <String>['loader_overlay'],
     'loading-list': <String>['skeletonizer'],
     'loading-inline': <String>['shimmer'],
     'pagination': <String>['infinite_scroll_pagination'],
   };
 
-  /// Folder holding a kind's profiles. The three loading roles share one.
-  static String folderForKind(String kind) =>
-      kind.startsWith('loading-') ? 'loading' : kind;
+  /// Folder holding a kind's profiles. The loading roles and the two codegen
+  /// roles share one folder each.
+  static String folderForKind(String kind) {
+    if (kind.startsWith('loading-')) return 'loading';
+    if (kind == 'json-codegen') return 'codegen';
+    return kind;
+  }
 
   /// Every `docs/profiles/` folder [options] can install. Derived, not
   /// hand-kept, so a new kind is cleaned up without a second edit.
@@ -53,6 +69,8 @@ class ProfileRegistry {
         return 'flutter_riverpod';
       case 'state:provider':
         return 'provider';
+      case 'state:change_notifier':
+        return null;
       case 'routing:go_router':
         return 'go_router';
       case 'routing:flutter_modular':
@@ -75,6 +93,8 @@ class ProfileRegistry {
         return 'isar';
       case 'storage:shared_preferences':
         return 'shared_preferences';
+      case 'storage:cloud_firestore':
+        return 'cloud_firestore';
       case 'localization:easy_localization':
         return 'easy_localization';
       case 'localization:intl':
@@ -83,6 +103,8 @@ class ProfileRegistry {
         return null;
       case 'codegen:freezed':
         return 'freezed|freezed_annotation';
+      case 'json-codegen:json_serializable':
+        return 'json_serializable';
       case 'loading-blocking:loader_overlay':
         return 'loader_overlay';
       case 'loading-list:skeletonizer':
@@ -103,6 +125,8 @@ class ProfileRegistry {
         return 'flutter_gen_runner';
       case 'codegen:freezed':
         return 'freezed';
+      case 'json-codegen:json_serializable':
+        return 'json_serializable';
     }
     return null;
   }

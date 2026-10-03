@@ -295,6 +295,24 @@ agents context "integrasikan API delete account"
 
 The classifier is operation-aware. It treats a visual-only change such as `ubah warna button login` as UI work, not authentication work. Security is loaded only for explicit credentials/tokens, authentication or authorization flows, password rules, secure storage, or destructive/sensitive operations.
 
+A framework error loads its own rule instead of the general UI rule:
+
+```bash
+agents context "perbaiki RenderFlex overflow di header"
+```
+
+```text
+Concerns: errors
+
+Recommended context:
+  AGENTS.md
+  docs/rules/ERRORS.md
+
+Estimated rule context: ~... tokens
+```
+
+The same split applies to the other added concerns. `jank`/`lambat` loads `PERFORMANCE.md`, `semantics`/`kontras` loads `ACCESSIBILITY.md`, and `sealed`/`pattern matching` loads `DART3.md` — a Dart 3 state request loads `DART3.md` together with the active state profile, because the sealed hierarchy belongs to whichever state package the project selected.
+
 `AGENTS.md` is a stable context router with three layers:
 
 - **ALWAYS:** the router, current requirement, and nearest comparable implementation.
@@ -357,7 +375,16 @@ project/
     │   ├── CODEGEN.md
     │   ├── COMMIT.md
     │   ├── STYLE.md
-    │   └── WORKFLOW.md
+    │   ├── WORKFLOW.md
+    │   ├── PERFORMANCE.md
+    │   ├── ACCESSIBILITY.md
+    │   ├── ERRORS.md
+    │   ├── DART3.md
+    │   ├── FIREBASE.md          # router; per-service detail lives in references/
+    │   └── references/
+    │       ├── firebase-firestore.md
+    │       ├── firebase-auth.md
+    │       └── firebase-observability.md
     └── profiles/
         ├── architecture/<active>.md
         ├── state/<active>.md
@@ -405,6 +432,7 @@ State:
 - flutter_bloc
 - flutter_riverpod
 - provider
+- `ChangeNotifier`/`ValueNotifier` (built-in Flutter primitives, no package)
 
 Routing:
 - go_router
@@ -426,6 +454,7 @@ Storage:
 - Drift
 - Isar
 - shared_preferences
+- Cloud Firestore
 
 Localization:
 - easy_localization
@@ -434,12 +463,21 @@ Localization:
 Assets/codegen/loading/pagination:
 - flutter_gen
 - Freezed
+- json_serializable
 - loader_overlay
 - skeletonizer
 - shimmer
 - infinite_scroll_pagination
 
+Model codegen and JSON codegen are separate choices and are installed side by side under `docs/profiles/codegen/`. Freezed covers union-state and copy generation; json_serializable covers API request/response models. Neither replaces the other, and a generation task loads whichever of the two the project selected.
+
 Unsupported packages are not automatically replaced. Existing code remains authoritative; add a custom project rule when necessary.
+
+## Rule documents vs profile kinds
+
+Two vocabularies exist on purpose and are not merged. `docs/rules/` documents and the keys in `RuleMapper` name *rule documents* (`state-management`, `dependency-injection`), matching the stem a human writes on a project rule file. Profile kinds name the *slots the CLI fills* (`state`, `di`), matching `agents profile set <kind> <value>`.
+
+Renaming one to match the other would break `matchesDynamicConcern`, which compares rule-document keys against concern names declared by external ruleset repositories. Nothing collides in practice because the rule mapper skips `docs/custom-rules/`, where a kind-named file would otherwise land.
 
 ## Development note
 
@@ -481,6 +519,12 @@ Generated projects receive the same rule as `docs/rules/COMMIT.md`, loaded only 
 Generated projects also receive `docs/rules/STYLE.md` for class/constant/helper/extension naming and widget structure, loaded only for naming or extraction tasks. The `flutter_bloc`, `go_router`, and `flutter_modular` profiles require a single bootstrap observer (`AppBlocObserver` / route observer) for logging.
 
 `docs/rules/UI.md` requires `GestureDetector` with `HitTestBehavior.translucent` instead of `InkWell` for custom tap handling, because `InkWell` needs a `Material` ancestor and its splash stays invisible over transparent or non-`Material` surfaces. Widgets that already accept a callback use it directly, so `ListTile(onTap: ...)` is never wrapped in another tap widget.
+
+Four more rules cover concerns the base rules did not mention. `docs/rules/PERFORMANCE.md` is loaded for a reported or measured performance problem and covers `const` subtrees, `ListView.builder` over long lists, stable keys, image `cacheWidth`, `RepaintBoundary`, and `compute`. `docs/rules/ACCESSIBILITY.md` is loaded for semantics, screen readers, contrast, tap targets, text scaling, and inclusive design. `docs/rules/ERRORS.md` maps each common Flutter framework failure to its cause and fix, such as `RenderFlex overflowed`, `Vertical viewport was given unbounded height`, `RenderBox was not laid out`, and `setState() called during build`. `docs/rules/DART3.md` covers sealed state hierarchies, records, pattern matching, and exhaustive switches for new Dart 3 code.
+
+`docs/rules/TESTING.md` now also requires `group()` named after the class under test, "should" naming for each case, a fresh subject per test, an injected clock or id source, and the check "can this test fail if the real code is broken?" before a test is kept. It also fixes the mocking boundary, requires `registerFallbackValue` before stubbing a custom type with `mocktail`, and requires a level-based decision before reaching for an end-to-end test.
+
+`docs/rules/FIREBASE.md` covers the cross-cutting invariants — App Check before a release build, security rules as the only authorization boundary, deny-by-default rules that validate fields and not just paths, no admin keys in the app, composite indexes, and the Emulator. Its per-service detail lives in `docs/rules/references/firebase-{firestore,auth,observability}.md`, which the agent reads only for the service being changed. This is the progressive-loading convention: a rule file may stay small and always-loaded while the detail it points to is read on demand. `docs/rules/references/` is skipped by the rule mapper, so a reference file never becomes an active concern source.
 
 Run before release:
 

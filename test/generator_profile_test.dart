@@ -79,6 +79,89 @@ void main() {
     }
   });
 
+  test('installs both codegen profiles into the shared codegen folder',
+      () async {
+    final project = Directory.systemTemp.createTempSync('agents-profile-test-');
+    try {
+      await RuleGenerator().apply(
+        project,
+        StackConfig(
+          mode: 'new',
+          architecture: 'feature_first_simple',
+          modelCodegen: 'freezed',
+          jsonCodegen: 'json_serializable',
+        ),
+      );
+
+      for (final rel in <String>[
+        'docs/profiles/codegen/freezed.md',
+        'docs/profiles/codegen/json_serializable.md',
+      ]) {
+        expect(
+          File('${project.path}/$rel').existsSync(),
+          isTrue,
+          reason: '$rel should be installed',
+        );
+      }
+    } finally {
+      project.deleteSync(recursive: true);
+    }
+  });
+
+  test('installs the change_notifier state profile', () async {
+    final project = Directory.systemTemp.createTempSync('agents-profile-test-');
+    try {
+      await RuleGenerator().apply(
+        project,
+        StackConfig(
+          mode: 'new',
+          architecture: 'feature_first_simple',
+          state: 'change_notifier',
+        ),
+      );
+
+      expect(
+        File('${project.path}/docs/profiles/state/change_notifier.md')
+            .existsSync(),
+        isTrue,
+      );
+    } finally {
+      project.deleteSync(recursive: true);
+    }
+  });
+
+  test('installs the cloud_firestore storage profile and firebase references',
+      () async {
+    final project = Directory.systemTemp.createTempSync('agents-profile-test-');
+    try {
+      await RuleGenerator().apply(
+        project,
+        StackConfig(
+          mode: 'new',
+          architecture: 'feature_first_simple',
+          storage: 'cloud_firestore',
+        ),
+      );
+
+      expect(
+        File('${project.path}/docs/profiles/storage/cloud_firestore.md')
+            .existsSync(),
+        isTrue,
+      );
+      expect(
+        File('${project.path}/docs/rules/FIREBASE.md').existsSync(),
+        isTrue,
+      );
+      expect(
+        File('${project.path}/docs/rules/references/firebase-firestore.md')
+            .existsSync(),
+        isTrue,
+      );
+    } finally {
+      project.deleteSync(recursive: true);
+    }
+  });
+
   test('dynamic ruleset profiles stay out of docs/profiles', () async {
     final project = Directory.systemTemp.createTempSync('agents-profile-test-');
     final store = RulesetStore();

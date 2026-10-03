@@ -3,17 +3,38 @@ import 'dart:io';
 import 'package:path/path.dart' as p;
 
 /// Discovers user-owned Markdown rule documents without changing them.
+///
+/// The keys below name *rule documents*, not CLI profile kinds. `ProfileRegistry`
+/// and `StackConfig.kindFields` name slots the CLI fills (`state`, `di`), while
+/// these name the stem a human writes on a project rule file (`state-management`,
+/// `dependency-injection`). The two vocabularies are kept apart deliberately:
+/// [matchesDynamicConcern] compares these keys against concern names declared by
+/// external rulesets, so renaming one here would silently stop matching a
+/// ruleset this CLI does not own. Nothing collides in practice because [scan]
+/// skips `docs/custom-rules/`, where a kind-named file would otherwise land.
 class RuleMapper {
   static const Map<String, List<String>> _terms = <String, List<String>>{
+    'accessibility': <String>['accessibility', 'a11y', 'wcag'],
     'architecture': <String>['architecture', 'struktur', 'folder'],
     'codegen': <String>['codegen', 'freezed', 'build runner'],
+    'commit': <String>['commit message', 'commit'],
+    'dart3': <String>['dart 3', 'sealed class', 'pattern matching'],
     'dependency-injection': <String>[
       'dependency injection',
       'injectable',
       'get_it',
       'di '
     ],
+    'errors': <String>['renderflex', 'unbounded constraint', 'not laid out'],
+    'firebase': <String>[
+      'firebase',
+      'firestore',
+      'crashlytics',
+      'app check',
+      'flutterfire'
+    ],
     'network': <String>['network', 'api', 'dio', 'repository'],
+    'performance': <String>['performance', 'jank'],
     'routing': <String>['routing', 'route', 'go_router', 'navigation'],
     'security': <String>['security', 'token', 'credential', 'secret'],
     'state-management': <String>[
@@ -22,6 +43,7 @@ class RuleMapper {
       'bloc',
       'riverpod'
     ],
+    'style': <String>['style rule', 'code style'],
     'testing': <String>['testing', 'test', 'widgettester'],
     'ui': <String>[' ui', 'widget', 'design', 'visual'],
     'workflow': <String>['workflow', 'checklist', 'completion'],
@@ -39,6 +61,7 @@ class RuleMapper {
           rel.startsWith('docs/profiles/') ||
           rel.startsWith('docs/custom-rules/') ||
           rel.startsWith('docs/project/') ||
+          rel.startsWith('docs/rules/references/') ||
           rel == 'docs/PROJECT-STACK.md') {
         continue;
       }

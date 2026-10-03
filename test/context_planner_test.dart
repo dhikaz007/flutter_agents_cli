@@ -140,4 +140,172 @@ void main() {
     expect(plan.concerns, equals(<String>{'ui'}));
     expect(plan.files, isNot(contains('docs/rules/STYLE.md')));
   });
+
+  test('loads the performance rule for a jank report', () {
+    File('${root.path}/docs/rules/PERFORMANCE.md')
+      ..createSync(recursive: true)
+      ..writeAsStringSync('# Performance');
+
+    final plan = ContextPlanner().plan(
+      root,
+      config,
+      'layar daftar lambat, banyak jank saat scroll',
+    );
+
+    expect(plan.concerns, equals(<String>{'performance'}));
+    expect(plan.files, contains('docs/rules/PERFORMANCE.md'));
+  });
+
+  test('loads the accessibility rule for a semantics request', () {
+    File('${root.path}/docs/rules/ACCESSIBILITY.md')
+      ..createSync(recursive: true)
+      ..writeAsStringSync('# Accessibility');
+
+    final plan = ContextPlanner().plan(
+      root,
+      config,
+      'tambah semantics untuk tombol icon',
+    );
+
+    expect(plan.concerns, equals(<String>{'accessibility'}));
+    expect(plan.files, contains('docs/rules/ACCESSIBILITY.md'));
+  });
+
+  test('loads the error rule for a RenderFlex overflow', () {
+    File('${root.path}/docs/rules/ERRORS.md')
+      ..createSync(recursive: true)
+      ..writeAsStringSync('# Errors');
+
+    final plan = ContextPlanner().plan(
+      root,
+      config,
+      'perbaiki RenderFlex overflow di header',
+    );
+
+    expect(plan.concerns, equals(<String>{'errors'}));
+    expect(plan.files, contains('docs/rules/ERRORS.md'));
+  });
+
+  test('loads the Dart 3 rule alongside state for a sealed state', () {
+    File('${root.path}/docs/rules/DART3.md')
+      ..createSync(recursive: true)
+      ..writeAsStringSync('# Dart 3');
+
+    final plan = ContextPlanner().plan(
+      root,
+      config,
+      'gunakan sealed class untuk status state',
+    );
+
+    expect(plan.concerns, contains('dart3'));
+    expect(plan.concerns, contains('state'));
+    expect(plan.files, contains('docs/rules/DART3.md'));
+  });
+
+  test(
+      'loads the firebase rule for a Firestore write without a storage profile',
+      () {
+    File('${root.path}/docs/rules/FIREBASE.md')
+      ..createSync(recursive: true)
+      ..writeAsStringSync('# Firebase');
+
+    final plan =
+        ContextPlanner().plan(root, config, 'simpan order ke firestore');
+
+    expect(plan.concerns, equals(<String>{'firebase'}));
+    expect(plan.files, contains('docs/rules/FIREBASE.md'));
+    expect(
+      plan.files,
+      isNot(contains('docs/profiles/storage/cloud_firestore.md')),
+    );
+  });
+
+  test('loads the active storage profile for a persistence task', () {
+    File('${root.path}/docs/profiles/storage/cloud_firestore.md')
+      ..createSync(recursive: true)
+      ..writeAsStringSync('# Firestore');
+    final firestoreConfig = StackConfig(
+      mode: 'existing',
+      architecture: 'feature_first_pragmatic_clean',
+      state: 'flutter_bloc',
+      storage: 'cloud_firestore',
+    );
+
+    final plan = ContextPlanner().plan(
+      root,
+      firestoreConfig,
+      'pindah ke local database untuk cache offline',
+    );
+
+    expect(plan.concerns, equals(<String>{'storage'}));
+    expect(plan.files, contains('docs/profiles/storage/cloud_firestore.md'));
+    expect(plan.files, contains('docs/PROJECT-STACK.md'));
+  });
+
+  test('loads the firebase rule for observability work', () {
+    File('${root.path}/docs/rules/FIREBASE.md')
+      ..createSync(recursive: true)
+      ..writeAsStringSync('# Firebase');
+
+    final plan = ContextPlanner().plan(
+      root,
+      config,
+      'pasang crashlytics dan app check',
+    );
+
+    expect(plan.concerns, equals(<String>{'firebase'}));
+    expect(plan.files, contains('docs/rules/FIREBASE.md'));
+  });
+
+  test('loads both codegen profiles for a generation task', () {
+    final codegenConfig = StackConfig(
+      mode: 'existing',
+      architecture: 'feature_first_pragmatic_clean',
+      state: 'flutter_bloc',
+      modelCodegen: 'freezed',
+      jsonCodegen: 'json_serializable',
+    );
+    for (final rel in <String>[
+      'docs/profiles/codegen/freezed.md',
+      'docs/profiles/codegen/json_serializable.md',
+    ]) {
+      File('${root.path}/$rel')
+        ..createSync(recursive: true)
+        ..writeAsStringSync('# $rel');
+    }
+
+    final plan = ContextPlanner().plan(
+      root,
+      codegenConfig,
+      'tambah model json_serializable untuk response API',
+    );
+
+    expect(plan.concerns, contains('codegen'));
+    expect(plan.files, contains('docs/profiles/codegen/freezed.md'));
+    expect(
+      plan.files,
+      contains('docs/profiles/codegen/json_serializable.md'),
+    );
+  });
+
+  test('plain widget work pulls in none of the added rules', () {
+    for (final name in <String>[
+      'PERFORMANCE.md',
+      'ACCESSIBILITY.md',
+      'ERRORS.md',
+      'DART3.md',
+    ]) {
+      File('${root.path}/docs/rules/$name')
+        ..createSync(recursive: true)
+        ..writeAsStringSync('# $name');
+    }
+
+    final plan = ContextPlanner().plan(root, config, 'tambah widget checkout');
+
+    expect(plan.concerns, equals(<String>{'ui'}));
+    expect(plan.files, isNot(contains('docs/rules/PERFORMANCE.md')));
+    expect(plan.files, isNot(contains('docs/rules/ACCESSIBILITY.md')));
+    expect(plan.files, isNot(contains('docs/rules/ERRORS.md')));
+    expect(plan.files, isNot(contains('docs/rules/DART3.md')));
+  });
 }

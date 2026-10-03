@@ -108,6 +108,7 @@ class ProjectDetector {
   String? _detectStorage(Set<String> dependencies) {
     if (dependencies.contains('hive_ce') || dependencies.contains('hive'))
       return 'hive_ce';
+    if (dependencies.contains('cloud_firestore')) return 'cloud_firestore';
     return _pick(dependencies, <String>['drift', 'isar', 'shared_preferences']);
   }
 

@@ -308,7 +308,7 @@ Other:
 
 Profile kinds:
   architecture, state, routing, di, network, storage, localization,
-  assets, codegen, loading-blocking, loading-list, loading-inline, pagination
+  assets, codegen, json-codegen, loading-blocking, loading-list, loading-inline, pagination
 
 Use `agents context` to preview the minimum rule context for a coding task.''');
 }

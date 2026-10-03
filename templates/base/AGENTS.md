@@ -56,24 +56,32 @@ Never silently migrate an established package, architecture, or convention durin
 
 Load only the active profile/rule for a concern actually touched by the implementation. If `PROJECT-STACK.md` lists a custom rule for that layer, load `docs/custom-rules/<layer>.md` too. Custom rules refine/override generic CLI profile guidance; explicit project rules and current user requirements still take precedence:
 
-- folder/layer/feature boundary → active `docs/profiles/architecture/*.md`
-- state/Cubit/provider/loading lifecycle → active `docs/profiles/state/*.md`
-- routing/navigation/guards → active `docs/profiles/routing/*.md`
-- dependency injection → active `docs/profiles/di/*.md`
-- HTTP/repository/network → active `docs/profiles/network/*.md`
-- persistence → active `docs/profiles/storage/*.md`
-- localization → active `docs/profiles/localization/*.md`
-- assets → active `docs/profiles/assets/*.md`
-- loading package behavior → relevant active `docs/profiles/loading/*.md`
-- model codegen → active `docs/profiles/codegen/*.md`
-- pagination → active `docs/profiles/pagination/*.md`
-- UI/component work → `docs/rules/UI.md`
-- class/constant/helper/extension naming or widget extraction → `docs/rules/STYLE.md`
-- credentials/tokens/authentication or authorization flow/password rules/secure storage/destructive or sensitive operation → `docs/rules/SECURITY.md`
-- tests → `docs/rules/TESTING.md`
-- generation → `docs/rules/CODEGEN.md`
-- writing a commit message → `docs/rules/COMMIT.md`
-- substantial feature/cross-domain/migration → `docs/rules/WORKFLOW.md`
+Match the task to the row by intent, not by folder name. Each trigger below is the only condition that loads that document.
+
+- Use when placing or moving a folder, layer, or feature boundary → active `docs/profiles/architecture/*.md`
+- Use when adding or changing Cubit/Bloc/provider/ChangeNotifier state, a loading lifecycle, or a refresh/paging state → active `docs/profiles/state/*.md`
+- Use when adding a route, changing navigation, or touching a guard or deep link → active `docs/profiles/routing/*.md`
+- Use when wiring how a dependency is provided or scoped → active `docs/profiles/di/*.md`
+- Use when calling an endpoint, wrapping a client, or changing repository/network behavior → active `docs/profiles/network/*.md`
+- Use when persisting data locally or in a database, or changing a schema, cache, or offline behavior → active `docs/profiles/storage/*.md`
+- Use when adding or changing a user-facing string, locale, or ARB entry → active `docs/profiles/localization/*.md`
+- Use when adding an asset, font, or generated asset reference → active `docs/profiles/assets/*.md`
+- Use when a loading package behavior matters, such as choosing between a blocking, list, or inline placeholder → relevant active `docs/profiles/loading/*.md`
+- Use when a model, union state, or copy/equality is generated → active `docs/profiles/codegen/*.md`
+- Use when an API request/response model is generated → `docs/profiles/codegen/json_serializable.md`
+- Use when adding or changing paging of a list → active `docs/profiles/pagination/*.md`
+- Use when building or changing a screen, widget, component, theme, or layout → `docs/rules/UI.md`
+- Use when naming a class/constant/helper/extension, or deciding whether to extract a widget → `docs/rules/STYLE.md`
+- Use when touching credentials, tokens, an auth or authorization flow, a password rule, secure storage, or a destructive/sensitive operation → `docs/rules/SECURITY.md`
+- Use when writing, reviewing, or fixing a test, or choosing a test level → `docs/rules/TESTING.md`
+- Use when generated output is affected, or a codegen command must run → `docs/rules/CODEGEN.md`
+- Use when writing a commit message → `docs/rules/COMMIT.md`
+- Use when the change is a substantial feature, crosses domains, or migrates/refactors → `docs/rules/WORKFLOW.md`
+- Use when UI is slow or janky, rebuilds are excessive, memory or startup time is questioned, or code is being profiled → `docs/rules/PERFORMANCE.md`
+- Use when semantics, a screen reader, keyboard or switch navigation, contrast, tap targets, text scaling, or inclusive design is involved → `docs/rules/ACCESSIBILITY.md`
+- Use when a Flutter framework error, layout exception, or rendering failure is reported or reproduced → `docs/rules/ERRORS.md`
+- Use when Firebase is involved: init, auth, Firestore, Realtime Database, Storage, Crashlytics, Messaging, Remote Config, or App Check → `docs/rules/FIREBASE.md`, then only the matching file under `docs/rules/references/`
+- Use when choosing a new Dart 3 data or state shape: sealed classes, records, pattern matching, exhaustive switches → `docs/rules/DART3.md`
 
 If inspection reveals a new concern, load that rule then. Do not read the union of all possible concerns first.
 
@@ -93,6 +101,7 @@ If it does not exist, inspect existing repository/model/constants/network conven
 - Presentation must not bypass the project's established repository/network boundary.
 - Mutations need duplicate-submit protection and documented project mutation safety.
 - Never hardcode/log secrets, credentials, or tokens.
+- Report a secret's presence and length (`${#GITHUB_TOKEN}`), never its value. `tool/hooks/protect-token.sh` is wired as a Claude Code `PreToolUse` hook and denies a Bash call that would print one; do not work around it.
 - Never manually edit generated files.
 - Do not commit/push unless explicitly requested.
 - Run required focused tests/codegen when relevant and `flutter analyze` before completion when Flutter tooling is available.

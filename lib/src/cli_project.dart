@@ -234,6 +234,11 @@ StackConfig _configure(StackConfig c) {
     ProfileRegistry.values('codegen'),
     detected: c.modelCodegen,
   );
+  c.jsonCodegen = choose(
+    'JSON codegen',
+    ProfileRegistry.values('json-codegen'),
+    detected: c.jsonCodegen,
+  );
   c.blockingLoader = choose(
     'Blocking loader',
     ProfileRegistry.values('loading-blocking'),

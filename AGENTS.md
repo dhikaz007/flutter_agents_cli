@@ -51,9 +51,9 @@ Commands (run from repo root):
 
 Rules:
 
-- Start from a symbol name or a community/cluster name. A generic keyword ("cubit", "login") makes the start node ambiguous and returns thousands of nodes.
+- Start queries from a symbol or file name. A community id is only useful after a symbol query already returned nodes to expand from; a bare id or a generic keyword ("cubit", "login") makes the start node ambiguous and returns thousands of nodes.
 - `explain` returns src path, line, and every edge with direction and relation. That is the full caller map — do not follow up with `grep -r` to confirm it.
-- Each node carries a `community` label (e.g. `Build Cluster 42`). Nodes in the same community are the neighbours worth exploring next.
+- Each node carries a numeric `community` id, not a readable name. Nodes sharing an id are the neighbours worth exploring next; match on the id, never on an invented cluster name.
 - Wide queries get truncated (`[!] TRUNCATED`). Narrow instead of raising `--budget`: pass `context_filter=['call']`, or query the specific symbol directly.
 - Use `grep` only when the graph has no node for the subject — for example a string literal, an asset path, or generated code.
 - `GRAPH_REPORT.md` is for broad architecture orientation only. It is much larger than a scoped query.

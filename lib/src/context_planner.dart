@@ -113,9 +113,7 @@ class ContextPlanner {
       'json_serializable',
       'generate',
       'build_runner',
-      'asset',
-      'locale key',
-      'localization',
+      'dart run build',
     ])) {
       concerns.add('codegen');
     }
@@ -225,6 +223,24 @@ class ContextPlanner {
       concerns.add('firebase');
     }
     if (any(<String>[
+      'localization',
+      'locale',
+      'l10n',
+      'i18n',
+      'translation',
+      'translations',
+      'arb',
+      'locale key',
+      'easy_localization',
+      'multi language',
+      'bahasa',
+    ])) {
+      concerns.add('localization');
+    }
+    if (any(<String>['asset', 'flutter_gen', 'font', 'fonts'])) {
+      concerns.add('assets');
+    }
+    if (any(<String>[
       'storage',
       'persist',
       'persistence',
@@ -310,24 +326,38 @@ class ContextPlanner {
     if (concerns.contains('storage') && config.storage != null) {
       addIfExists(ProfileRegistry.profilePath('storage', config.storage!));
     }
+    if (concerns.contains('localization') && config.localization != null) {
+      addIfExists(
+        ProfileRegistry.profilePath('localization', config.localization!),
+      );
+    }
+    if (concerns.contains('assets') && config.assets != null) {
+      addIfExists(ProfileRegistry.profilePath('assets', config.assets!));
+    }
+
+    // A loading profile is a role, not a companion of the state concern: only
+    // the role the task names is relevant, and naming it is the whole signal.
+    void addLoading(String kind, String? value) {
+      if (value != null) addIfExists(ProfileRegistry.profilePath(kind, value));
+    }
+
+    if (any(<String>['shimmer', 'inline placeholder', 'text placeholder'])) {
+      addLoading('loading-inline', config.inlineLoader);
+    }
+    if (any(<String>['skeleton', 'list placeholder', 'card placeholder'])) {
+      addLoading('loading-list', config.listLoader);
+    }
+    if (any(<String>[
+      'loader overlay',
+      'blocking loader',
+      'blocking overlay',
+      'progress overlay',
+    ])) {
+      addLoading('loading-blocking', config.blockingLoader);
+    }
 
     if (concerns.contains('state') && config.state != null) {
       addIfExists(ProfileRegistry.profilePath('state', config.state!));
-      if (config.listLoader != null)
-        addIfExists(
-          ProfileRegistry.profilePath('loading-list', config.listLoader!),
-        );
-      if (config.blockingLoader != null)
-        addIfExists(
-          ProfileRegistry.profilePath(
-            'loading-blocking',
-            config.blockingLoader!,
-          ),
-        );
-      if (config.inlineLoader != null)
-        addIfExists(
-          ProfileRegistry.profilePath('loading-inline', config.inlineLoader!),
-        );
       if (config.pagination != null &&
           any(<String>['pagination', 'next page', 'paging'])) {
         addIfExists(

@@ -257,6 +257,119 @@ void main() {
     expect(plan.files, contains('docs/rules/FIREBASE.md'));
   });
 
+  test('a state task loads no loading profile unless the role is named', () {
+    final loaderConfig = StackConfig(
+      mode: 'existing',
+      architecture: 'feature_first_pragmatic_clean',
+      state: 'flutter_bloc',
+      blockingLoader: 'loader_overlay',
+      listLoader: 'skeletonizer',
+      inlineLoader: 'shimmer',
+    );
+    for (final rel in <String>[
+      'docs/profiles/state/flutter_bloc.md',
+      'docs/profiles/loading/loader_overlay.md',
+      'docs/profiles/loading/skeletonizer.md',
+      'docs/profiles/loading/shimmer.md',
+    ]) {
+      File('${root.path}/$rel')
+        ..createSync(recursive: true)
+        ..writeAsStringSync('# $rel');
+    }
+
+    final plan = ContextPlanner().plan(
+      root,
+      loaderConfig,
+      'gunakan sealed class untuk status state',
+    );
+
+    expect(plan.files, contains('docs/profiles/state/flutter_bloc.md'));
+    for (final rel in <String>[
+      'docs/profiles/loading/loader_overlay.md',
+      'docs/profiles/loading/skeletonizer.md',
+      'docs/profiles/loading/shimmer.md',
+    ]) {
+      expect(plan.files, isNot(contains(rel)));
+    }
+  });
+
+  test('a named loading role loads only that profile', () {
+    final loaderConfig = StackConfig(
+      mode: 'existing',
+      architecture: 'feature_first_pragmatic_clean',
+      state: 'flutter_bloc',
+      blockingLoader: 'loader_overlay',
+      listLoader: 'skeletonizer',
+      inlineLoader: 'shimmer',
+    );
+    for (final rel in <String>[
+      'docs/profiles/loading/loader_overlay.md',
+      'docs/profiles/loading/skeletonizer.md',
+      'docs/profiles/loading/shimmer.md',
+    ]) {
+      File('${root.path}/$rel')
+        ..createSync(recursive: true)
+        ..writeAsStringSync('# $rel');
+    }
+
+    final plan = ContextPlanner().plan(
+      root,
+      loaderConfig,
+      'ganti skeletonizer dengan shimmer',
+    );
+
+    expect(plan.files, contains('docs/profiles/loading/shimmer.md'));
+    expect(
+      plan.files,
+      isNot(contains('docs/profiles/loading/skeletonizer.md')),
+      reason: 'the task names the inline role, so the list role is not loaded',
+    );
+  });
+
+  test('routes the localization and assets profiles', () {
+    for (final rel in <String>[
+      'docs/profiles/localization/intl.md',
+      'docs/profiles/assets/flutter_gen.md',
+    ]) {
+      File('${root.path}/$rel')
+        ..createSync(recursive: true)
+        ..writeAsStringSync('# $rel');
+    }
+    final l10nConfig = StackConfig(
+      mode: 'existing',
+      architecture: 'feature_first_pragmatic_clean',
+      state: 'flutter_bloc',
+      localization: 'intl',
+      assets: 'flutter_gen',
+    );
+
+    final l10n = ContextPlanner().plan(
+      root,
+      l10nConfig,
+      'pindahkan string ke ARB localization',
+    );
+    expect(l10n.concerns, contains('localization'));
+    expect(l10n.files, contains('docs/profiles/localization/intl.md'));
+    expect(
+      l10n.concerns,
+      isNot(contains('codegen')),
+      reason: 'the localization concern owns ARB and locale keys',
+    );
+
+    final assets = ContextPlanner().plan(
+      root,
+      l10nConfig,
+      'tambah font asset baru',
+    );
+    expect(assets.concerns, contains('assets'));
+    expect(assets.files, contains('docs/profiles/assets/flutter_gen.md'));
+    expect(
+      assets.concerns,
+      isNot(contains('codegen')),
+      reason: 'the assets concern owns asset declarations',
+    );
+  });
+
   test('loads both codegen profiles for a generation task', () {
     final codegenConfig = StackConfig(
       mode: 'existing',

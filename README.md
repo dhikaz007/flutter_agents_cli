@@ -1,4 +1,4 @@
-# flutter-agents CLI v2.5.0
+# flutter-agents CLI v2.5.1
 
 [![CI](https://github.com/dhikaz007/flutter_agents_cli/actions/workflows/ci.yml/badge.svg)](https://github.com/dhikaz007/flutter_agents_cli/actions/workflows/ci.yml)
 [![Release](https://github.com/dhikaz007/flutter_agents_cli/actions/workflows/release.yml/badge.svg)](https://github.com/dhikaz007/flutter_agents_cli/actions/workflows/release.yml)
@@ -472,6 +472,16 @@ Assets/codegen/loading/pagination:
 Model codegen and JSON codegen are separate choices and are installed side by side under `docs/profiles/codegen/`. Freezed covers union-state and copy generation; json_serializable covers API request/response models. Neither replaces the other, and a generation task loads whichever of the two the project selected.
 
 Unsupported packages are not automatically replaced. Existing code remains authoritative; add a custom project rule when necessary.
+
+## Secret handling hook
+
+Generated projects receive `tool/hooks/protect-token.sh`, wired as a Claude Code `PreToolUse` hook through `.claude/settings.json`. It denies a Bash call that would print a token value, dump the environment, or use `curl -v`, so `SECURITY.md` is backed by the harness instead of only asking. Reporting a secret's length (`echo ${#GITHUB_TOKEN}`) and passing a token as an `Authorization` header stay allowed.
+
+A project that already has `.claude/settings.json` keeps its own file and the hook is not installed — the generator never overwrites an unmanaged file. Merge the `hooks.PreToolUse` entry by hand if you want the enforcement there.
+
+## Progressive loading
+
+A rule file may stay small and always-loaded while the detail it points to is read on demand. `docs/rules/references/` is that folder: `FIREBASE.md` states the cross-cutting invariants and names the reference file for the service being changed. Reference files are skipped by the rule mapper, so one never competes with a rule file for a concern.
 
 ## Rule documents vs profile kinds
 

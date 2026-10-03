@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 2.5.2
+
+- Document the graphify navigation commands, the narrow-before-wide rule, and the `--budget` guidance in `AGENTS.md`.
+
 ## 2.5.1
 
 - Stop loading all three loading profiles on any state task. `agents context` pulled `skeletonizer`, `loader_overlay`, and `shimmer` for a plain sealed-class request; a loading profile is now loaded only when the task names that role, which is what the `AGENTS.md` router already documented.

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 2.5.0
+
 - Generate `docs/rules/PERFORMANCE.md` and load it for a reported or measured performance problem, covering `const` subtrees, lazy list building, stable keys, image decode sizing, and repaint isolation.
 - Generate `docs/rules/ACCESSIBILITY.md` and load it for semantics, screen readers, contrast, tap targets, text scaling, and inclusive-design work.
 - Generate `docs/rules/ERRORS.md` and load it for a Flutter framework error, mapping `RenderFlex overflowed`, unbounded viewport height, `RenderBox was not laid out`, and `setState() called during build` to their cause and fix.

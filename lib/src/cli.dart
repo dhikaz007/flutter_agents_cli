@@ -188,7 +188,9 @@ ArgParser _buildParser() {
   ruleset.addCommand('use');
   ruleset.addCommand('update')..addFlag('apply', negatable: false);
   ruleset.addCommand('profiles');
-  ruleset.addCommand('map')..addFlag('review', negatable: false);
+  ruleset.addCommand('map')
+    ..addFlag('review', negatable: false)
+    ..addFlag('all', negatable: false);
   ruleset.addCommand('apply');
   ruleset.addCommand('link')..addFlag('yes', abbr: 'y', negatable: false);
   ruleset.addCommand('status');

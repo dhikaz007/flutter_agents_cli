@@ -112,6 +112,20 @@ void main() {
     expect(RuleMapper().scan(root), isEmpty);
   });
 
+  test('classifies a ruleset CORE.md by stem alone', () {
+    // A CORE.md spans architecture, state, and UI vocabulary at once, so content
+    // matching alone leaves it ambiguous and the ruleset would never install it.
+    // `_dynamicRuleConcerns` lists the ruleset's own rules/ folder rather than
+    // docs/, so classify() is the only gate here.
+    const body = '''
+# Core Rules
+- Keep feature-first architecture and cubit state in the feature.
+- A widget renders state and a reusable pattern is followed.
+''';
+
+    expect(RuleMapper().classify('rules/CORE.md', body), 'core');
+  });
+
   test('maps the commit and style rules instead of colliding on testing', () {
     final rules = Directory('${root.path}/docs/rules')
       ..createSync(recursive: true);

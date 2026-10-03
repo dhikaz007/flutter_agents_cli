@@ -1,4 +1,4 @@
-# flutter-agents CLI v2.5.2
+# flutter-agents CLI v2.6.0
 
 [![CI](https://github.com/dhikaz007/flutter_agents_cli/actions/workflows/ci.yml/badge.svg)](https://github.com/dhikaz007/flutter_agents_cli/actions/workflows/ci.yml)
 [![Release](https://github.com/dhikaz007/flutter_agents_cli/actions/workflows/release.yml/badge.svg)](https://github.com/dhikaz007/flutter_agents_cli/actions/workflows/release.yml)
@@ -659,6 +659,23 @@ project rule remains untouched. When both sources are selected for one concern,
 the CLI also creates a managed `docs/dynamic-rules/merged/<concern>.md` view
 with project rules first and Dynamic Rules second. `agents ruleset audit`
 reports the active source for each concern.
+
+To activate every universal rule a ruleset declares instead of naming concerns
+one by one:
+
+```bash
+agents ruleset map --all
+```
+
+`map` alone only writes the project rule mapping, so a ruleset project ended up
+with an empty `docs/dynamic-rules/rules/`. `--all` resolves the active profile,
+activates every concern the ruleset declares, and reports which concerns changed
+source from `project` to `dynamic` rather than swapping it silently. It requires
+an active profile from `agents ruleset use`; `--review` never writes files.
+
+A ruleset's concern names come from its own `rules/*.md` filenames. A file whose
+body spans several concerns, such as `CORE.md` in `vibe_coding_rules_dynamic`,
+is classified by filename stem alone.
 
 ### Ruleset maintenance
 

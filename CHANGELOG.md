@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 2.6.0
+
+- Add `agents ruleset map --all` to activate every universal rule an active ruleset declares. `ruleset map` only wrote the project rule mapping, so a ruleset project ended up with an empty `docs/dynamic-rules/rules/` unless each concern was named in `ruleset apply`. The command reports which concerns changed source from `project` to `dynamic` instead of swapping it silently.
+- Classify a ruleset `CORE.md` by filename stem. Its body spans architecture, state, and UI vocabulary at once, so content matching left it ambiguous and the rule a ruleset tells every agent to read first never installed.
+
 ## 2.5.2
 
 - Document the graphify navigation commands, the narrow-before-wide rule, and the `--budget` guidance in `AGENTS.md`.

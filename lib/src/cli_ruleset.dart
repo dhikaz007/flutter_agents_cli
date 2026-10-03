@@ -65,7 +65,7 @@ Future<void> runRuleset(Directory root, ArgResults command) async {
       return;
     case 'map':
       if (args.isNotEmpty)
-        throw ArgumentError('Usage: agents ruleset map [--review]');
+        throw ArgumentError('Usage: agents ruleset map [--review] [--all]');
       final mapper = RuleMapper();
       final found = mapper.scan(root);
       stdout.writeln('Project rule mapping');
@@ -86,6 +86,8 @@ Future<void> runRuleset(Directory root, ArgResults command) async {
         stdout.writeln(mapper.ambiguousMappings(root).isEmpty
             ? 'Preview only. Run `agents ruleset map` to write this mapping.'
             : 'Preview only. Resolve ambiguous documents before applying a map.');
+        if (sub?['all'] != true) return;
+        stdout.writeln('Dynamic Rules: no change in review mode.');
         return;
       }
       final manifest = ManifestStore().load(root);
@@ -95,6 +97,40 @@ Future<void> runRuleset(Directory root, ArgResults command) async {
         if (!(config.ruleMappings[entry.key]?.startsWith('dynamic:') ??
             false)) {
           config.ruleMappings[entry.key] = 'project:${entry.value}';
+        }
+      }
+      if (sub?['all'] == true) {
+        if (config.ruleset == null || config.rulesetProfile == null) {
+          throw StateError(
+            'No active ruleset profile. Run `agents ruleset use <name> <profile>` first.',
+          );
+        }
+        final available = _dynamicRuleConcerns(
+          store.resolve(config.ruleset!, config.rulesetProfile!),
+        );
+        if (available.isEmpty) {
+          stdout.writeln('The active ruleset declares no universal rules.');
+        } else {
+          final added = available
+              .difference(config.dynamicRules.toSet())
+              .toList()
+            ..sort();
+          // --all means the Dynamic Rule wins over the project's own document
+          // for these concerns. Report it instead of swapping the source quietly.
+          final replaced = added
+              .where((concern) =>
+                  (config.ruleMappings[concern] ?? '').startsWith('project:'))
+              .toList();
+          for (final concern in added) {
+            config.dynamicRules.add(concern);
+            config.ruleMappings[concern] = 'dynamic:${config.ruleset}';
+          }
+          stdout.writeln('Activated Dynamic Rules: ${added.join(', ')}');
+          if (replaced.isNotEmpty) {
+            stdout.writeln(
+              'Replaced the project document for: ${replaced.join(', ')}',
+            );
+          }
         }
       }
       final report = await RuleGenerator().apply(root, config);

@@ -18,6 +18,10 @@ class RuleMapper {
     'architecture': <String>['architecture', 'struktur', 'folder'],
     'codegen': <String>['codegen', 'freezed', 'build runner'],
     'commit': <String>['commit message', 'commit'],
+    // A ruleset may ship a CORE.md that every consuming agent must read first.
+    // Its body spans architecture, state, and UI terms at once, so only the stem
+    // can classify it; the content fallback is deliberately narrow.
+    'core': <String>['core rule', 'core rules'],
     'dart3': <String>['dart 3', 'sealed class', 'pattern matching'],
     'dependency-injection': <String>[
       'dependency injection',

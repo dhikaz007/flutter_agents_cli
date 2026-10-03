@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+## 2.5.1
+
+- Stop loading all three loading profiles on any state task. `agents context` pulled `skeletonizer`, `loader_overlay`, and `shimmer` for a plain sealed-class request; a loading profile is now loaded only when the task names that role, which is what the `AGENTS.md` router already documented.
+- Route the `localization` and `assets` profiles from `agents context`. Both were installed into every project but unreachable from the command, since no concern selected them.
+- Stop the `codegen` concern from also firing on `asset`, `locale key`, and `localization`, which now belong to the `assets` and `localization` concerns. A localization task dropped from five recommended files to two.
+- Document that a project with its own `.claude/settings.json` keeps it and does not receive the `protect-token.sh` hook wiring.
+
 ## 2.5.0
 
 - Generate `docs/rules/PERFORMANCE.md` and load it for a reported or measured performance problem, covering `const` subtrees, lazy list building, stable keys, image decode sizing, and repaint isolation.

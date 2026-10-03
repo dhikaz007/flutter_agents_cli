@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 2.6.1
+
+- Correct the `AGENTS.md` graphify guidance: a node carries a numeric `community` id, not a readable cluster name, and a community id is only a useful start point after a symbol query already returned nodes.
+
 ## 2.6.0
 
 - Add `agents ruleset map --all` to activate every universal rule an active ruleset declares. `ruleset map` only wrote the project rule mapping, so a ruleset project ended up with an empty `docs/dynamic-rules/rules/` unless each concern was named in `ruleset apply`. The command reports which concerns changed source from `project` to `dynamic` instead of swapping it silently.

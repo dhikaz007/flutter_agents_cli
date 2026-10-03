@@ -35,3 +35,27 @@ Format `[<ACTION>]: <subject>`. The subject is at most 72 characters and ends wi
 - If the diff already reads clearly on its own, write the subject alone.
 - Keep unrelated changes in separate commits.
 - Stage only the intended files. Never commit secrets, `graphify-out/`, or `.dart_tool/`.
+
+## Codebase Navigation — graphify
+
+`graphify-out/` exists in this repo. Query the knowledge graph before grepping or reading files.
+
+Commands (run from repo root):
+
+| Need | Command |
+| --- | --- |
+| All callers/callees of one symbol | `graphify explain <Symbol>` |
+| Scoped subgraph for a question | `graphify query "<question>" --budget 2000` |
+| Shortest path between two nodes | `graphify path "<A>" "<B>"` |
+| Cross-repo / merged graph | `graphify merge-graphs <g1> <g2> --out ./graphify-out/merged-graph.json` |
+
+Rules:
+
+- Start from a symbol name or a community/cluster name. A generic keyword ("cubit", "login") makes the start node ambiguous and returns thousands of nodes.
+- `explain` returns src path, line, and every edge with direction and relation. That is the full caller map — do not follow up with `grep -r` to confirm it.
+- Each node carries a `community` label (e.g. `Build Cluster 42`). Nodes in the same community are the neighbours worth exploring next.
+- Wide queries get truncated (`[!] TRUNCATED`). Narrow instead of raising `--budget`: pass `context_filter=['call']`, or query the specific symbol directly.
+- Use `grep` only when the graph has no node for the subject — for example a string literal, an asset path, or generated code.
+- `GRAPH_REPORT.md` is for broad architecture orientation only. It is much larger than a scoped query.
+
+After changing source files, rebuild the index: `graphify`.

@@ -8,7 +8,7 @@ import 'package:path/path.dart' as p;
 /// and `StackConfig.kindFields` name slots the CLI fills (`state`, `di`), while
 /// these name the stem a human writes on a project rule file (`state-management`,
 /// `dependency-injection`). The two vocabularies are kept apart deliberately:
-/// [matchesDynamicConcern] compares these keys against concern names declared by
+/// [declaresConcern] compares these keys against concern names declared by
 /// external rulesets, so renaming one here would silently stop matching a
 /// ruleset this CLI does not own. Nothing collides in practice because [scan]
 /// skips `docs/custom-rules/`, where a kind-named file would otherwise land.
@@ -83,9 +83,25 @@ class RuleMapper {
     return candidates;
   }
 
+  static final RegExp _concernName = RegExp(r'^[a-z][a-z0-9-]*$');
+
+  static String _stem(String path) =>
+      p.basenameWithoutExtension(path).toLowerCase().replaceAll('_', '-');
+
+  /// The concern a ruleset filename states outright, with no vocabulary check.
+  ///
+  /// A ruleset owns its rule list, so its filename is the authority and a new
+  /// concern must not wait for a CLI release. This is deliberately not used by
+  /// [scan]: there a project document competes for a concern, and inventing one
+  /// from any filename would let `docs/rules/BRAND.md` claim a concern nobody
+  /// configured.
+  static String? _declaredConcern(String path) {
+    final stem = _stem(path);
+    return _concernName.hasMatch(stem) ? stem : null;
+  }
+
   String? classify(String path, String contents) {
-    final stem =
-        p.basenameWithoutExtension(path).toLowerCase().replaceAll('_', '-');
+    final stem = _stem(path);
     for (final concern in _terms.keys) {
       if (stem == concern ||
           stem.replaceAll('-', '') == concern.replaceAll('-', '')) {
@@ -100,18 +116,21 @@ class RuleMapper {
     return matched.length == 1 ? matched.single : null;
   }
 
-  bool matchesDynamicConcern(String concern, String path, String contents) {
+  /// Whether a ruleset file answers to [concern].
+  ///
+  /// Ruleset side only: a declared filename counts as its own concern, so a
+  /// ruleset can ship a concern this CLI has no vocabulary for. Project
+  /// documents go through [classify] alone.
+  bool declaresConcern(String concern, String path, String contents) {
     final classified = classify(path, contents);
     return classified == concern ||
-        (concern == 'pagination' && classified == 'state-management');
+        (concern == 'pagination' && classified == 'state-management') ||
+        _declaredConcern(path) == concern;
   }
 
   /// The concerns a ruleset declares, read from its own `rules/*.md` filenames.
   ///
-  /// A ruleset owns its rule list, so the vocabulary lives with the mapper that
-  /// classifies it. A CLI-side registry would instead make every new
-  /// `rules/<CONCERN>.md` require a CLI release before a project could install
-  /// it. `pagination` stays an alias of `state-management` because one document
+  /// `pagination` stays an alias of `state-management` because one document
   /// answers both.
   Set<String> dynamicConcerns(Directory rulesetRoot) {
     final folder = Directory(p.join(rulesetRoot.path, 'rules'));
@@ -120,7 +139,9 @@ class RuleMapper {
         .listSync(recursive: true)
         .whereType<File>()
         .where((file) => p.extension(file.path).toLowerCase() == '.md')
-        .map((file) => classify(file.path, file.readAsStringSync()))
+        .map((file) =>
+            classify(file.path, file.readAsStringSync()) ??
+            _declaredConcern(file.path))
         .whereType<String>()
         .toSet();
     if (concerns.contains('state-management')) concerns.add('pagination');

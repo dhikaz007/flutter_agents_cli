@@ -162,4 +162,29 @@ void main() {
   test('a ruleset without a rules folder declares no concerns', () {
     expect(RuleMapper().dynamicConcerns(root), isEmpty);
   });
+
+  test('a ruleset declares a concern the CLI has no vocabulary for', () {
+    final rules = Directory('${root.path}/rules')..createSync(recursive: true);
+    File('${rules.path}/TELEMETRY.md').writeAsStringSync('# Telemetry');
+
+    final mapper = RuleMapper();
+
+    expect(mapper.dynamicConcerns(root), <String>{'telemetry'});
+    expect(
+      mapper.declaresConcern('telemetry', 'rules/TELEMETRY.md', '# Telemetry'),
+      isTrue,
+    );
+  });
+
+  test('a project document never claims a concern by filename alone', () {
+    final rules = Directory('${root.path}/docs/rules')
+      ..createSync(recursive: true);
+    File('${rules.path}/BRAND.md').writeAsStringSync('# Brand voice');
+
+    final mapper = RuleMapper();
+
+    expect(mapper.classify('docs/rules/BRAND.md', '# Brand voice'), isNull);
+    expect(mapper.dynamicConcerns(root), isEmpty);
+    expect(mapper.unambiguousMappings(root), isEmpty);
+  });
 }

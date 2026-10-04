@@ -201,7 +201,7 @@ class RuleGenerator {
           for (final entity in sourceDir.listSync(recursive: true)) {
             if (entity is! File ||
                 p.extension(entity.path).toLowerCase() != '.md') continue;
-            if (mapper.matchesDynamicConcern(
+            if (mapper.declaresConcern(
               concern,
               entity.path,
               entity.readAsStringSync(),

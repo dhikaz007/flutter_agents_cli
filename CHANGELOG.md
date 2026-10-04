@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 2.6.2
+
+- Add the fastlane scaffold design. Three inspected projects disproved the assumptions a generic scaffold would encode: `scheme: "Runner"` is not universal, flavor-to-scheme mapping is not one to one, and both Gradle DSLs are in use. No behavior change.
+
 ## 2.6.1
 
 - Correct the `AGENTS.md` graphify guidance: a node carries a numeric `community` id, not a readable cluster name, and a community id is only a useful start point after a symbol query already returned nodes.

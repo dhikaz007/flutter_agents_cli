@@ -106,6 +106,27 @@ class RuleMapper {
         (concern == 'pagination' && classified == 'state-management');
   }
 
+  /// The concerns a ruleset declares, read from its own `rules/*.md` filenames.
+  ///
+  /// A ruleset owns its rule list, so the vocabulary lives with the mapper that
+  /// classifies it. A CLI-side registry would instead make every new
+  /// `rules/<CONCERN>.md` require a CLI release before a project could install
+  /// it. `pagination` stays an alias of `state-management` because one document
+  /// answers both.
+  Set<String> dynamicConcerns(Directory rulesetRoot) {
+    final folder = Directory(p.join(rulesetRoot.path, 'rules'));
+    if (!folder.existsSync()) return <String>{};
+    final concerns = folder
+        .listSync(recursive: true)
+        .whereType<File>()
+        .where((file) => p.extension(file.path).toLowerCase() == '.md')
+        .map((file) => classify(file.path, file.readAsStringSync()))
+        .whereType<String>()
+        .toSet();
+    if (concerns.contains('state-management')) concerns.add('pagination');
+    return concerns;
+  }
+
   Map<String, String> unambiguousMappings(Directory root) => scan(root).map(
         (concern, paths) =>
             MapEntry(concern, paths.length == 1 ? paths.single : ''),

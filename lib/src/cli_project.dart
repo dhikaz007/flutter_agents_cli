@@ -14,6 +14,7 @@ import 'preset_io.dart';
 import 'prompts.dart';
 import 'registry.dart';
 import 'rule_store.dart';
+import 'rule_mapper.dart';
 import 'ruleset_store.dart';
 
 Future<void> runInit(Directory root, ArgResults command) async {
@@ -104,7 +105,9 @@ Future<void> runInit(Directory root, ArgResults command) async {
             _ensureAndChooseRulesetProfile(rulesetStore, rulesetName);
         config.ruleset = rulesetName;
         config.rulesetProfile = profile;
-        config.dynamicRules = universalDynamicConcerns.toList();
+        config.dynamicRules = RuleMapper()
+            .dynamicConcerns(rulesetStore.directory(rulesetName))
+            .toList();
       }
     }
   } else {
@@ -541,13 +544,3 @@ void runDetect(Directory root) {
 const String defaultRulesetName = 'vibe-coding-rules';
 const String defaultRulesetUrl =
     'https://github.com/dhikaz007/vibe_coding_rules_dynamic.git';
-const List<String> universalDynamicConcerns = <String>[
-  'codegen',
-  'environment',
-  'network',
-  'security',
-  'state-management',
-  'testing',
-  'ui',
-  'workflow',
-];

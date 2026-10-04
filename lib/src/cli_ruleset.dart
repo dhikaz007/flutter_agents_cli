@@ -105,7 +105,7 @@ Future<void> runRuleset(Directory root, ArgResults command) async {
             'No active ruleset profile. Run `agents ruleset use <name> <profile>` first.',
           );
         }
-        final available = _dynamicRuleConcerns(
+        final available = RuleMapper().dynamicConcerns(
           store.resolve(config.ruleset!, config.rulesetProfile!),
         );
         if (available.isEmpty) {
@@ -148,7 +148,7 @@ Future<void> runRuleset(Directory root, ArgResults command) async {
         throw StateError(
             'Select a profile first with `agents ruleset use $name <profile>`.');
       }
-      final available = _dynamicRuleConcerns(
+      final available = RuleMapper().dynamicConcerns(
         store.resolve(name, config.rulesetProfile!),
       );
       for (final concern in args.skip(1)) {
@@ -498,21 +498,6 @@ Future<void> runRuleset(Directory root, ArgResults command) async {
     default:
       throw ArgumentError('Usage: agents ruleset <add|list|use>');
   }
-}
-
-Set<String> _dynamicRuleConcerns(Directory rulesetRoot) {
-  final folder = Directory(p.join(rulesetRoot.path, 'rules'));
-  if (!folder.existsSync()) return <String>{};
-  final mapper = RuleMapper();
-  final concerns = folder
-      .listSync(recursive: true)
-      .whereType<File>()
-      .where((file) => p.extension(file.path).toLowerCase() == '.md')
-      .map((file) => mapper.classify(file.path, file.readAsStringSync()))
-      .whereType<String>()
-      .toSet();
-  if (concerns.contains('state-management')) concerns.add('pagination');
-  return concerns;
 }
 
 void _linkRuleMap(Directory root, {required bool yes}) {

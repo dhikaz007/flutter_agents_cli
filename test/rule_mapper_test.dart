@@ -115,7 +115,7 @@ void main() {
   test('classifies a ruleset CORE.md by stem alone', () {
     // A CORE.md spans architecture, state, and UI vocabulary at once, so content
     // matching alone leaves it ambiguous and the ruleset would never install it.
-    // `_dynamicRuleConcerns` lists the ruleset's own rules/ folder rather than
+    // dynamicConcerns lists the ruleset's own rules/ folder rather than
     // docs/, so classify() is the only gate here.
     const body = '''
 # Core Rules
@@ -143,5 +143,23 @@ void main() {
       'style': 'docs/rules/STYLE.md',
     });
     expect(mapper.ambiguousMappings(root), isEmpty);
+  });
+
+  test('derives a ruleset concerns from its own rules/ filenames', () {
+    final rules = Directory('${root.path}/rules')..createSync(recursive: true);
+    File('${rules.path}/ENVIRONMENT.md').writeAsStringSync('# Environment');
+    File('${rules.path}/STATE-MANAGEMENT.md').writeAsStringSync('# State');
+    File('${rules.path}/CORE.md').writeAsStringSync('# Core');
+
+    expect(RuleMapper().dynamicConcerns(root), <String>{
+      'environment',
+      'state-management',
+      'pagination',
+      'core',
+    });
+  });
+
+  test('a ruleset without a rules folder declares no concerns', () {
+    expect(RuleMapper().dynamicConcerns(root), isEmpty);
   });
 }

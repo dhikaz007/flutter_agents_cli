@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.7.0
 
 - Add the `environment` concern so a ruleset's `ENVIRONMENT.md` resolves. `universalDynamicConcerns` did not name it, so `ruleset map --all` silently skipped the file and the ruleset shipped without its env rules.
 

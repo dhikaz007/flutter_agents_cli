@@ -543,6 +543,7 @@ const String defaultRulesetUrl =
     'https://github.com/dhikaz007/vibe_coding_rules_dynamic.git';
 const List<String> universalDynamicConcerns = <String>[
   'codegen',
+  'environment',
   'network',
   'security',
   'state-management',

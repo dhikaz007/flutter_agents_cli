@@ -30,6 +30,13 @@ class RuleMapper {
       'di '
     ],
     'errors': <String>['renderflex', 'unbounded constraint', 'not laid out'],
+    'environment': <String>[
+      'environment',
+      'env var',
+      'dart-define',
+      'flavor',
+      'appconfig'
+    ],
     'firebase': <String>[
       'firebase',
       'firestore',

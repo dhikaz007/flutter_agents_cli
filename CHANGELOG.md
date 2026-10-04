@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add the `environment` concern so a ruleset's `ENVIRONMENT.md` resolves. `universalDynamicConcerns` did not name it, so `ruleset map --all` silently skipped the file and the ruleset shipped without its env rules.
+
 ## 2.6.2
 
 - Add the fastlane scaffold design. Three inspected projects disproved the assumptions a generic scaffold would encode: `scheme: "Runner"` is not universal, flavor-to-scheme mapping is not one to one, and both Gradle DSLs are in use. No behavior change.

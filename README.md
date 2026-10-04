@@ -677,6 +677,11 @@ A ruleset's concern names come from its own `rules/*.md` filenames. A file whose
 body spans several concerns, such as `CORE.md` in `vibe_coding_rules_dynamic`,
 is classified by filename stem alone.
 
+A filename only resolves to a concern the CLI knows, so a ruleset rule the CLI
+has no concern for is skipped rather than installed under a guessed name.
+`ENVIRONMENT.md` resolves to the `environment` concern, which covers env vars,
+`.env.example` placeholders, flavors, and build-time defines.
+
 ### Ruleset maintenance
 
 ```bash

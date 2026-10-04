@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.8.0
+
+- Treat a ruleset filename as its own concern name, so a ruleset can ship a concern the CLI has no vocabulary for without waiting for a CLI release. Project documents keep the vocabulary gate: `docs/rules/BRAND.md` claims no concern.
+
 ## 2.7.1
 
 - Derive the concerns `agents init` activates from the ruleset instead of a CLI-side allowlist. `universalDynamicConcerns` was a second registry beside the rule mapper, so a concern missing from it was skipped at init while `ruleset map --all` installed it — the same rule active or missing depending on the command.

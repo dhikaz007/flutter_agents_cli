@@ -1,4 +1,4 @@
-# flutter-agents CLI v2.7.1
+# flutter-agents CLI v2.8.0
 
 [![CI](https://github.com/dhikaz007/flutter_agents_cli/actions/workflows/ci.yml/badge.svg)](https://github.com/dhikaz007/flutter_agents_cli/actions/workflows/ci.yml)
 [![Release](https://github.com/dhikaz007/flutter_agents_cli/actions/workflows/release.yml/badge.svg)](https://github.com/dhikaz007/flutter_agents_cli/actions/workflows/release.yml)
@@ -677,10 +677,12 @@ A ruleset's concern names come from its own `rules/*.md` filenames. A file whose
 body spans several concerns, such as `CORE.md` in `vibe_coding_rules_dynamic`,
 is classified by filename stem alone.
 
-A filename only resolves to a concern the mapper knows, so a name it does not
-recognize is skipped rather than installed under a guess. `ENVIRONMENT.md`
-resolves to the `environment` concern, which covers env vars, `.env.example`
-placeholders, flavors, and build-time defines.
+A ruleset filename is also its own concern name, so a ruleset can ship a concern
+the CLI has no vocabulary for — `rules/TELEMETRY.md` resolves to `telemetry`
+without a CLI release. `ENVIRONMENT.md` covers env vars, `.env.example`
+placeholders, flavors, and build-time defines. A *project* document gets no such
+fallback: `docs/rules/BRAND.md` claims no concern, because a project document
+competes for a concern rather than declaring one.
 
 The CLI keeps no allowlist of its own: `map --all` activates exactly the concerns
 it finds in the ruleset's `rules/`, and `init` reads the same list. A rule the

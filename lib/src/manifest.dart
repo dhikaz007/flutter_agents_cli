@@ -7,7 +7,7 @@ import 'package:path/path.dart' as p;
 import 'models.dart';
 
 const String manifestFileName = '.agents-manifest';
-const String cliVersion = '2.7.1';
+const String cliVersion = '2.8.0';
 
 class ManifestStore {
   File fileFor(Directory root) => File(p.join(root.path, manifestFileName));

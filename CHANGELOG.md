@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.8.1
+
+- Add a quick start for a first project: what `agents init` writes, how to check it with `agents doctor`, what `agents context` reports, and the three flags worth knowing. No behavior change.
+
 ## 2.8.0
 
 - Treat a ruleset filename as its own concern name, so a ruleset can ship a concern the CLI has no vocabulary for without waiting for a CLI release. Project documents keep the vocabulary gate: `docs/rules/BRAND.md` claims no concern.

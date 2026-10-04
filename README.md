@@ -27,6 +27,60 @@ agents init
 
 If the global executable is not on PATH, Dart will tell you the pub-cache bin path to add.
 
+## Quick start
+
+`agents init` is the only command most projects need. It reads the project, asks about what it could not detect, and writes the policy files.
+
+```bash
+cd /path/to/your/flutter_project
+agents init
+```
+
+What lands in the project:
+
+```text
+AGENTS.md                       # the agent entrypoint
+docs/PROJECT-STACK.md           # detected stack, single source of truth
+docs/RULES-MAP.md               # which rule is active per concern
+docs/rules/*.md                 # rule documents
+docs/profiles/<kind>/<name>.md  # the profile chosen per concern
+docs/project/PROJECT-RULES.md   # yours to edit, never overwritten
+.agents-manifest                # CLI bookkeeping, used by sync and doctor
+.claude/settings.json           # wires the secret-handling hook (Claude Code)
+```
+
+Check the result:
+
+```bash
+agents doctor
+```
+
+`Result: 0 error(s), 0 warning(s)` means the manifest and the files on disk agree. Lines prefixed `i` are informational and normal on a project the CLI could not fully detect.
+
+See what a task pulls in, without writing anything:
+
+```bash
+agents context "tambah repository untuk ambil data dari api"
+```
+
+```text
+Concerns: network
+
+Recommended context:
+  AGENTS.md
+  docs/PROJECT-STACK.md
+```
+
+Three flags worth knowing on a first run:
+
+| Flag | Effect |
+| --- | --- |
+| `--yes` | accept detection instead of prompting; for CI and scripting |
+| `--mode new` | treat the directory as a new project and pick a stack deliberately |
+| `--preset <name>` | start from a built-in preset, for example `cubit-clean` |
+
+After that the agent reads `AGENTS.md` on its own. To add stack rules from an external ruleset, see [Dynamic rulesets](#dynamic-rulesets-v16).
+
 ## Release
 
 Push a version tag after CI is green to create a GitHub Release with generated release notes:

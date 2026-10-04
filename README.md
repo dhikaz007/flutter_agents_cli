@@ -1,4 +1,4 @@
-# flutter-agents CLI v2.7.0
+# flutter-agents CLI v2.7.1
 
 [![CI](https://github.com/dhikaz007/flutter_agents_cli/actions/workflows/ci.yml/badge.svg)](https://github.com/dhikaz007/flutter_agents_cli/actions/workflows/ci.yml)
 [![Release](https://github.com/dhikaz007/flutter_agents_cli/actions/workflows/release.yml/badge.svg)](https://github.com/dhikaz007/flutter_agents_cli/actions/workflows/release.yml)
@@ -677,10 +677,14 @@ A ruleset's concern names come from its own `rules/*.md` filenames. A file whose
 body spans several concerns, such as `CORE.md` in `vibe_coding_rules_dynamic`,
 is classified by filename stem alone.
 
-A filename only resolves to a concern the CLI knows, so a ruleset rule the CLI
-has no concern for is skipped rather than installed under a guessed name.
-`ENVIRONMENT.md` resolves to the `environment` concern, which covers env vars,
-`.env.example` placeholders, flavors, and build-time defines.
+A filename only resolves to a concern the mapper knows, so a name it does not
+recognize is skipped rather than installed under a guess. `ENVIRONMENT.md`
+resolves to the `environment` concern, which covers env vars, `.env.example`
+placeholders, flavors, and build-time defines.
+
+The CLI keeps no allowlist of its own: `map --all` activates exactly the concerns
+it finds in the ruleset's `rules/`, and `init` reads the same list. A rule the
+ruleset ships is therefore never silently skipped for want of a CLI release.
 
 ### Ruleset maintenance
 

@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.7.1
+
+- Derive the concerns `agents init` activates from the ruleset instead of a CLI-side allowlist. `universalDynamicConcerns` was a second registry beside the rule mapper, so a concern missing from it was skipped at init while `ruleset map --all` installed it — the same rule active or missing depending on the command.
+
 ## 2.7.0
 
 - Add the `environment` concern so a ruleset's `ENVIRONMENT.md` resolves. `universalDynamicConcerns` did not name it, so `ruleset map --all` silently skipped the file and the ruleset shipped without its env rules.

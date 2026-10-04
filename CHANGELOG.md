@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.9.0
+
+- Add `docs/rules/references/firebase-setup.md` and route to it from `FIREBASE.md`. The router already listed "init" as a Firebase trigger, but no file held the setup steps, so an initialization task loaded invariants with no procedure. The reference covers the FlutterFire CLI run and its generated `firebase_options.dart`, the platform config files, per-plugin Android API and iOS deployment minimums, Emulator wiring, and one Firebase project per release-status flavor including per-variant config placement on both platforms.
+
 ## 2.8.1
 
 - Add a quick start for a first project: what `agents init` writes, how to check it with `agents doctor`, what `agents context` reports, and the three flags worth knowing. No behavior change.
@@ -15,8 +19,6 @@
 ## 2.7.0
 
 - Add the `environment` concern so a ruleset's `ENVIRONMENT.md` resolves. `universalDynamicConcerns` did not name it, so `ruleset map --all` silently skipped the file and the ruleset shipped without its env rules.
-
-- Add `docs/rules/references/firebase-setup.md` and route to it from `FIREBASE.md`. The router already listed "init" as a Firebase trigger, but no file held the setup steps, so an initialization task loaded invariants with no procedure. The reference covers the FlutterFire CLI run and its generated `firebase_options.dart`, the platform config files, per-plugin Android API and iOS deployment minimums, Emulator wiring, and one Firebase project per release-status flavor including per-variant config placement on both platforms.
 
 ## 2.6.2
 

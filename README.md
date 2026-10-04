@@ -434,11 +434,12 @@ project/
     │   ├── ACCESSIBILITY.md
     │   ├── ERRORS.md
     │   ├── DART3.md
-    │   ├── FIREBASE.md          # router; per-service detail lives in references/
-    │   └── references/
-    │       ├── firebase-firestore.md
-    │       ├── firebase-auth.md
-    │       └── firebase-observability.md
+│   ├── FIREBASE.md          # router; per-service detail lives in references/
+     │   └── references/
+     │       ├── firebase-setup.md
+     │       ├── firebase-firestore.md
+     │       ├── firebase-auth.md
+     │       └── firebase-observability.md
     └── profiles/
         ├── architecture/<active>.md
         ├── state/<active>.md
@@ -588,7 +589,7 @@ Four more rules cover concerns the base rules did not mention. `docs/rules/PERFO
 
 `docs/rules/TESTING.md` now also requires `group()` named after the class under test, "should" naming for each case, a fresh subject per test, an injected clock or id source, and the check "can this test fail if the real code is broken?" before a test is kept. It also fixes the mocking boundary, requires `registerFallbackValue` before stubbing a custom type with `mocktail`, and requires a level-based decision before reaching for an end-to-end test.
 
-`docs/rules/FIREBASE.md` covers the cross-cutting invariants — App Check before a release build, security rules as the only authorization boundary, deny-by-default rules that validate fields and not just paths, no admin keys in the app, composite indexes, and the Emulator. Its per-service detail lives in `docs/rules/references/firebase-{firestore,auth,observability}.md`, which the agent reads only for the service being changed. This is the progressive-loading convention: a rule file may stay small and always-loaded while the detail it points to is read on demand. `docs/rules/references/` is skipped by the rule mapper, so a reference file never becomes an active concern source.
+`docs/rules/FIREBASE.md` covers the cross-cutting invariants — App Check before a release build, security rules as the only authorization boundary, deny-by-default rules that validate fields and not just paths, no admin keys in the app, composite indexes, and the Emulator. Its per-service detail lives in `docs/rules/references/firebase-{setup,firestore,auth,observability}.md`, which the agent reads only for the service being changed. `firebase-setup.md` covers project wiring: the FlutterFire CLI run, the generated `firebase_options.dart` and platform config files, per-plugin platform minimums, Emulator setup, and one Firebase project per release-status flavor with the per-variant config placement each platform needs. This is the progressive-loading convention: a rule file may stay small and always-loaded while the detail it points to is read on demand. `docs/rules/references/` is skipped by the rule mapper, so a reference file never becomes an active concern source.
 
 Run before release:
 

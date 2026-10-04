@@ -80,7 +80,7 @@ Match the task to the row by intent, not by folder name. Each trigger below is t
 - Use when UI is slow or janky, rebuilds are excessive, memory or startup time is questioned, or code is being profiled → `docs/rules/PERFORMANCE.md`
 - Use when semantics, a screen reader, keyboard or switch navigation, contrast, tap targets, text scaling, or inclusive design is involved → `docs/rules/ACCESSIBILITY.md`
 - Use when a Flutter framework error, layout exception, or rendering failure is reported or reproduced → `docs/rules/ERRORS.md`
-- Use when Firebase is involved: init, auth, Firestore, Realtime Database, Storage, Crashlytics, Messaging, Remote Config, or App Check → `docs/rules/FIREBASE.md`, then only the matching file under `docs/rules/references/`
+- Use when Firebase is involved: install, init, setup, config files, flavors, auth, Firestore, Realtime Database, Storage, Crashlytics, Messaging, Remote Config, or App Check → `docs/rules/FIREBASE.md`, then only the matching file under `docs/rules/references/`
 - Use when choosing a new Dart 3 data or state shape: sealed classes, records, pattern matching, exhaustive switches → `docs/rules/DART3.md`
 
 If inspection reveals a new concern, load that rule then. Do not read the union of all possible concerns first.

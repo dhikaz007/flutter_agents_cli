@@ -14,4 +14,4 @@ Cloud Firestore as the project's persistence layer. Replaces local storage when 
 - Never treat an empty snapshot as an empty state when the read actually failed; handle the error branch separately.
 - When the schema is undocumented, inspect the existing model, collection constant, or endpoint mapping. Do not invent field names.
 
-Read `docs/rules/FIREBASE.md` for the cross-cutting invariants and the Firestore reference for schema, listener, and rules detail.
+Read `docs/rules/FIREBASE.md` for the cross-cutting invariants, the Firestore reference for schema, listener, and rules detail, and the setup reference when the Firebase config or a flavor is involved.

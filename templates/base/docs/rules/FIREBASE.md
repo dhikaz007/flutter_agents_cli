@@ -1,6 +1,6 @@
 # Firebase Rule
 
-Load only when the project uses Firebase: initialization, auth, Firestore, Realtime Database, Storage, Crashlytics, Cloud Messaging, or Remote Config.
+Load only when the project uses Firebase: initialization, setup, auth, Firestore, Realtime Database, Storage, Crashlytics, Cloud Messaging, Remote Config, or flavors.
 
 - Enable App Check before exposing any Firebase surface in a release build. Without it, an attacker can call your project directly from outside the app.
 - Firestore and Realtime Database security rules are the only authorization boundary. Hiding a button or guarding a route in the client protects nothing.
@@ -17,8 +17,9 @@ Load only when the project uses Firebase: initialization, auth, Firestore, Realt
 
 | Task | Read |
 | --- | --- |
+| Installing, FlutterFire CLI, config files, platform minimums, Emulator, flavors | [references/firebase-setup.md](references/firebase-setup.md) |
 | Firestore schema, CRUD, listeners, pagination, indexes, offline, rules | [references/firebase-firestore.md](references/firebase-firestore.md) |
 | Auth state, social sign-in, MFA, session persistence, auth errors | [references/firebase-auth.md](references/firebase-auth.md) |
 | Crashlytics, logging, Analytics, Remote Config | [references/firebase-observability.md](references/firebase-observability.md) |
 
-The per-service detail lives in those three files so this rule stays small enough to always load.
+The per-service detail lives in those four files so this rule stays small enough to always load.

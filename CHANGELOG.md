@@ -16,6 +16,8 @@
 
 - Add the `environment` concern so a ruleset's `ENVIRONMENT.md` resolves. `universalDynamicConcerns` did not name it, so `ruleset map --all` silently skipped the file and the ruleset shipped without its env rules.
 
+- Add `docs/rules/references/firebase-setup.md` and route to it from `FIREBASE.md`. The router already listed "init" as a Firebase trigger, but no file held the setup steps, so an initialization task loaded invariants with no procedure. The reference covers the FlutterFire CLI run and its generated `firebase_options.dart`, the platform config files, per-plugin Android API and iOS deployment minimums, Emulator wiring, and one Firebase project per release-status flavor including per-variant config placement on both platforms.
+
 ## 2.6.2
 
 - Add the fastlane scaffold design. Three inspected projects disproved the assumptions a generic scaffold would encode: `scheme: "Runner"` is not universal, flavor-to-scheme mapping is not one to one, and both Gradle DSLs are in use. No behavior change.

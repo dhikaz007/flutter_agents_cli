@@ -157,6 +157,11 @@ void main() {
             .existsSync(),
         isTrue,
       );
+      expect(
+        File('${project.path}/docs/rules/references/firebase-setup.md')
+            .existsSync(),
+        isTrue,
+      );
     } finally {
       project.deleteSync(recursive: true);
     }

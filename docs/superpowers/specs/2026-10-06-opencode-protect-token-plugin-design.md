@@ -82,7 +82,7 @@ export const ProtectToken = async () => {
 }
 ```
 
-`SECRETS` is one pipe-joined alternation, the same 13 names the bash hook used:
+`SECRETS` is one pipe-joined alternation, the same 14 names the bash hook used:
 
 ```
 GITHUB_TOKEN|GH_TOKEN|GITLAB_TOKEN|FIREBASE_TOKEN|FIREBASE_API_KEY|FLUTTERFIRE_TOKEN|GCLOUD_SERVICE_KEY|SUPABASE_SERVICE_ROLE|OPENAI_API_KEY|ANTHROPIC_API_KEY|GEMINI_API_KEY|NPM_TOKEN|PUB_HOSTED_URL|DART_AUTH_TOKEN
@@ -107,8 +107,9 @@ learns the variable names; blocking them only makes it guess.
 
 The two arguments read from opencode are pinned here because they are an external
 contract, not a choice: `output.args.command` for `bash`, `output.args.filePath` for
-`read`. A change in opencode renames them, and the tests fail rather than the plugin
-silently allowing everything.
+`read`. The plugin fails closed: if opencode renames either argument, the missing
+argument denies the call instead of silently allowing everything, and the regression
+tests pin that behaviour.
 
 Still allowed, as before: reporting a secret's length (`echo ${#GITHUB_TOKEN}`) and
 passing a token to a tool as an auth header (`curl -H "Authorization: Bearer

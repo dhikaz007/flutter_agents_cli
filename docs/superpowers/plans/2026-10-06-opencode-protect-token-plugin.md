@@ -15,7 +15,7 @@
 - Dependencies stay at exactly `args`, `path`, `yaml`, `crypto`. This change adds none.
 - Every regex in rules 1-4 is ported verbatim from `templates/base/tool/hooks/protect-token.sh` lines 42, 46, 51, 56. Same order, same case-insensitive matching, no rewrite in transit.
 - Denial is `throw new Error(reason)`. No second mechanism.
-- `SECRETS` is one pipe-joined alternation of exactly these 13 names: `GITHUB_TOKEN|GH_TOKEN|GITLAB_TOKEN|FIREBASE_TOKEN|FIREBASE_API_KEY|FLUTTERFIRE_TOKEN|GCLOUD_SERVICE_KEY|SUPABASE_SERVICE_ROLE|OPENAI_API_KEY|ANTHROPIC_API_KEY|GEMINI_API_KEY|NPM_TOKEN|PUB_HOSTED_URL|DART_AUTH_TOKEN`.
+- `SECRETS` is one pipe-joined alternation of exactly these 14 names: `GITHUB_TOKEN|GH_TOKEN|GITLAB_TOKEN|FIREBASE_TOKEN|FIREBASE_API_KEY|FLUTTERFIRE_TOKEN|GCLOUD_SERVICE_KEY|SUPABASE_SERVICE_ROLE|OPENAI_API_KEY|ANTHROPIC_API_KEY|GEMINI_API_KEY|NPM_TOKEN|PUB_HOSTED_URL|DART_AUTH_TOKEN`.
 - The template names `.env.example`, `.env.sample`, `.env.template`, `.env.defaults` are always allowed. Everything else named `.env` or `.env.*` is denied.
 - opencode argument names are external contract, not choice: `output.args.command` for `bash`, `output.args.filePath` for `read`.
 - Commit messages follow `[<ACTION>]: <subject>`, at most 72 characters, no trailing period.

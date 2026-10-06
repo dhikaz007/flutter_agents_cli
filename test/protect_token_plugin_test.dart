@@ -134,6 +134,39 @@ try {
     );
   });
 
+  test('denies a real .env whatever the reader command looks like', () async {
+    expect(
+        await reasonFor('bash', <String, Object?>{'command': 'cat -n .env'}),
+        isNotNull);
+    expect(
+        await reasonFor('bash', <String, Object?>{'command': 'head -5 .env'}),
+        isNotNull);
+    expect(
+        await reasonFor('bash', <String, Object?>{'command': 'tail -20 .env'}),
+        isNotNull);
+    expect(
+        await reasonFor('bash', <String, Object?>{'command': 'cat ".env"'}),
+        isNotNull);
+    expect(
+        await reasonFor(
+            'bash', <String, Object?>{'command': 'cat package.json; cat .env'}),
+        isNotNull);
+    expect(
+      await reasonFor(
+          'bash', <String, Object?>{'command': 'cat -n .env.example'}),
+      isNull,
+    );
+    expect(
+      await reasonFor('bash', <String, Object?>{'command': 'cat package.json'}),
+      isNull,
+    );
+  });
+
+  test('a missing tool argument denies instead of failing open', () async {
+    expect(await reasonFor('bash', <String, Object?>{}), isNotNull);
+    expect(await reasonFor('read', <String, Object?>{}), isNotNull);
+  });
+
   test('allows reporting the length and passing a token as a header', () async {
     expect(
       await reasonFor('bash', <String, Object?>{

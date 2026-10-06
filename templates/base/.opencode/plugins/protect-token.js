@@ -34,8 +34,10 @@ const CURL_VERBOSE = /curl[^|;&]*(-v|--verbose|--trace(-ascii|-ascii)?|--trace-c
 // Debug/network tooling that echoes a full request, headers included.
 const SECRET_ON_ARGV = new RegExp(`(dart-define|--verbose)\\s[^|;&]*\\$\\{?(${SECRETS})`, 'i')
 
-// Reading a real .env through cat, head, or a pager.
-const ENV_READER = /(?:^|[|;&]\s*)(?:cat|head|tail|less|more|bat)\s+(\S+)/i
+// Reading a real .env through cat, head, or a pager. Global so matchAll finds
+// every reader command on the line; matchAll clones the regex, so lastIndex
+// never leaks between calls.
+const ENV_READER = /(?:^|[|;&]\s*)(?:cat|head|tail|less|more|bat)\s+/gi
 
 const REASONS = {
   printsSecret:
@@ -48,6 +50,10 @@ const REASONS = {
     'Blocked: this command passes a secret on the command line, where it lands in the process list and shell history.',
   envRead:
     'Blocked: this reads a .env file. Report the presence and length of a variable instead, or read a committed .env.example.',
+  missingBashArg:
+    'Blocked: the Bash command argument is missing, so the tool contract may have changed. Re-send the command through the Bash tool or report the mismatch.',
+  missingReadArg:
+    'Blocked: the read file path is missing, so the tool contract may have changed. Report the mismatch instead of retrying the read.',
 }
 
 // Committed templates: how an agent learns the variable names.
@@ -60,23 +66,34 @@ const ENV_TEMPLATES = new Set([
 
 const basename = (filePath) => filePath.split(/[\\/]/).pop() ?? ''
 
+// One layer of shell quoting is not part of the file name.
+const stripQuotes = (token) => token.replace(/^["'](.*)["']$/, '$1')
+
 const isRealEnv = (name) =>
   name === '.env' || (name.startsWith('.env.') && !ENV_TEMPLATES.has(name))
 
 export const ProtectToken = async () => ({
   'tool.execute.before': async (input, output) => {
     if (input.tool === 'bash') {
-      const command = output.args.command ?? ''
+      if (typeof output.args.command !== 'string') deny(REASONS.missingBashArg)
+      const command = output.args.command
       if (PRINTS_SECRET.test(command)) deny(REASONS.printsSecret)
       if (DUMPS_ENV.test(command)) deny(REASONS.dumpsEnv)
       if (CURL_VERBOSE.test(command)) deny(REASONS.curlVerbose)
       if (SECRET_ON_ARGV.test(command)) deny(REASONS.secretOnArgv)
-      const reader = command.match(ENV_READER)
-      if (reader && isRealEnv(basename(reader[1]))) deny(REASONS.envRead)
+      for (const reader of command.matchAll(ENV_READER)) {
+        const segment = command
+          .slice(reader.index + reader[0].length)
+          .split(/[|;&]/)[0]
+        for (const token of segment.split(/\s+/)) {
+          if (isRealEnv(basename(stripQuotes(token)))) deny(REASONS.envRead)
+        }
+      }
       return
     }
     if (input.tool === 'read') {
-      if (isRealEnv(basename(output.args.filePath ?? ''))) deny(REASONS.envRead)
+      if (typeof output.args.filePath !== 'string') deny(REASONS.missingReadArg)
+      if (isRealEnv(basename(output.args.filePath))) deny(REASONS.envRead)
     }
   },
 })

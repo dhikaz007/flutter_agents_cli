@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Harden the opencode plugin: a `bash` call whose `command` argument is missing and a `read` whose `filePath` argument is missing are now denied instead of silently allowed.
+- Harden the reader-command rule in the opencode plugin: every reader match on the line is checked, every argument token is inspected with surrounding quotes stripped, so `cat -n .env`, `head -5 .env`, `tail -20 .env`, and `cat ".env"` are denied while the committed `.env` templates stay readable.
+
 ## 2.10.0
 
 - Add an opencode plugin at `.opencode/plugins/protect-token.js`. It denies a Bash call that prints a secret, dumps the environment, uses `curl -v`, or passes a secret on the command line, and denies reading a real `.env` through the `read` tool or a reader command. Reporting a secret's length and passing a token as an auth header stay allowed.
@@ -134,8 +139,6 @@
 
 ## 2.1.2
 - Added Dynamic Rules `dev_dependencies` support to dependency planning and installation.
-
-## 2.10.0
 - Updated the GitHub README with the v2.1 Dynamic Rules workflow and the complete ruleset command reference.
 - Added GitHub Actions CI for analysis, tests, and Dynamic Rules profile smoke tests.
 - Added GitHub Release automation for version tags.

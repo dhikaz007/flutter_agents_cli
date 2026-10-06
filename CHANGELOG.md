@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.10.0
+
+- Add an opencode plugin at `.opencode/plugins/protect-token.js`. It denies a Bash call that prints a secret, dumps the environment, uses `curl -v`, or passes a secret on the command line, and denies reading a real `.env` through the `read` tool or a reader command. Reporting a secret's length and passing a token as an auth header stay allowed.
+- Remove `tool/hooks/protect-token.sh` and `.claude/settings.json`. The generator copied both into every project, but opencode never read `.claude/settings.json`, so the hook was inert outside Claude Code. The next `agents init` deletes both from an already-generated project.
+
 ## 2.9.0
 
 - Add `docs/rules/references/firebase-setup.md` and route to it from `FIREBASE.md`. The router already listed "init" as a Firebase trigger, but no file held the setup steps, so an initialization task loaded invariants with no procedure. The reference covers the FlutterFire CLI run and its generated `firebase_options.dart`, the platform config files, per-plugin Android API and iOS deployment minimums, Emulator wiring, and one Firebase project per release-status flavor including per-variant config placement on both platforms.
@@ -130,7 +135,7 @@
 ## 2.1.2
 - Added Dynamic Rules `dev_dependencies` support to dependency planning and installation.
 
-## Unreleased
+## 2.10.0
 - Updated the GitHub README with the v2.1 Dynamic Rules workflow and the complete ruleset command reference.
 - Added GitHub Actions CI for analysis, tests, and Dynamic Rules profile smoke tests.
 - Added GitHub Release automation for version tags.

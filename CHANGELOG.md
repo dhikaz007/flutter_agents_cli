@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.10.1
 
 - Harden the opencode plugin: a `bash` call whose `command` argument is missing and a `read` whose `filePath` argument is missing are now denied instead of silently allowed.
 - Harden the reader-command rule in the opencode plugin: every reader match on the line is checked, every argument token is inspected with surrounding quotes stripped, so `cat -n .env`, `head -5 .env`, `tail -20 .env`, and `cat ".env"` are denied while the committed `.env` templates stay readable.

@@ -158,4 +158,18 @@ try {
     expect(await reasonFor('bash', <String, Object?>{'command': 'dart analyze'}),
         isNull);
   });
+
+  test('the retired Claude Code hook is no longer generated', () async {
+    final templates = await RuleGenerator().templateRoot();
+    expect(
+      File(p.join(templates.path, 'base', '.claude', 'settings.json'))
+          .existsSync(),
+      isFalse,
+    );
+    expect(
+      File(p.join(templates.path, 'base', 'tool', 'hooks', 'protect-token.sh'))
+          .existsSync(),
+      isFalse,
+    );
+  });
 }

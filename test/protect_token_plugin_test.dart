@@ -1,0 +1,161 @@
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:flutter_agents_cli/src/generator.dart';
+import 'package:path/path.dart' as p;
+import 'package:test/test.dart';
+
+/// The generated opencode plugin enforces at the harness what `SECURITY.md` can
+/// only ask for in prose. These cases pin the behaviour a project depends on: a
+/// print of a secret and a read of a real `.env` are denied, and the supported
+/// escape hatches are not.
+void main() {
+  late Directory project;
+  late String pluginPath;
+
+  /// ESM shim. `node -e` starts at `argv[1]`, so the plugin path is `argv[1]`
+  /// and the synthetic tool call is `argv[2]`.
+  const runner = '''
+import { pathToFileURL } from "node:url"
+const mod = await import(pathToFileURL(process.argv[1]).href)
+const spec = JSON.parse(process.argv[2])
+const hooks = await mod.ProtectToken({})
+try {
+  await hooks["tool.execute.before"]({ tool: spec.tool }, { args: spec.args })
+  console.log("OK")
+} catch (error) {
+  console.log("DENY:" + error.message)
+}
+''';
+
+  setUpAll(() async {
+    final templates = await RuleGenerator().templateRoot();
+    project = Directory.systemTemp.createTempSync('agents-plugin-test-');
+    pluginPath = p.join(project.path, 'protect-token.js');
+    File(pluginPath)
+      ..createSync(recursive: true)
+      ..writeAsBytesSync(
+        File(
+          p.join(
+            templates.path,
+            'base',
+            '.opencode',
+            'plugins',
+            'protect-token.js',
+          ),
+        ).readAsBytesSync(),
+      );
+    // Without this, node treats the plugin as CommonJS and fails to parse the
+    // ESM `export`. opencode loads it through bun, which does not need it.
+    File(p.join(project.path, 'package.json'))
+        .writeAsStringSync('{"type":"module"}');
+  });
+
+  tearDownAll(() => project.deleteSync(recursive: true));
+
+  /// Feeds one tool call to the plugin under `node` and returns the deny reason,
+  /// or null when the plugin lets the call through.
+  Future<String?> reasonFor(String tool, Map<String, Object?> args) async {
+    final result = await Process.run(
+      'node',
+      <String>[
+        '--input-type=module',
+        '-e',
+        runner,
+        pluginPath,
+        jsonEncode(<String, Object?>{'tool': tool, 'args': args}),
+      ],
+      workingDirectory: project.path,
+    );
+    if (result.exitCode != 0) {
+      throw StateError('node failed: ${result.stderr}');
+    }
+    final raw = (result.stdout as String).trim();
+    if (raw == 'OK') return null;
+    if (!raw.startsWith('DENY:')) {
+      throw StateError('plugin returned an unexpected payload: $raw');
+    }
+    return raw.substring('DENY:'.length);
+  }
+
+  test('denies printing a token value', () async {
+    expect(await reasonFor('bash', <String, Object?>{
+      'command': r'echo $GITHUB_TOKEN',
+    }), isNotNull);
+    expect(await reasonFor('bash', <String, Object?>{
+      'command': r'printf "%s" $GITLAB_TOKEN',
+    }), isNotNull);
+  });
+
+  test('denies a whole-environment dump', () async {
+    expect(
+        await reasonFor('bash', <String, Object?>{'command': 'printenv'}),
+        isNotNull);
+    expect(await reasonFor('bash', <String, Object?>{'command': 'env'}),
+        isNotNull);
+  });
+
+  test('denies curl verbose output that prints the auth header', () async {
+    expect(
+      await reasonFor('bash', <String, Object?>{
+        'command': 'curl -v https://api.example.com',
+      }),
+      isNotNull,
+    );
+  });
+
+  test('denies reading a real .env through the read tool', () async {
+    expect(await reasonFor('read', <String, Object?>{'filePath': '/p/.env'}),
+        isNotNull);
+    expect(
+        await reasonFor('read', <String, Object?>{'filePath': '/p/.env.production'}),
+        isNotNull);
+    expect(
+        await reasonFor('read', <String, Object?>{'filePath': '/p/.env.example'}),
+        isNull,
+    );
+    expect(
+        await reasonFor('read', <String, Object?>{
+          'filePath': '/p/lib/firebase_options.dart',
+        }),
+        isNull);
+  });
+
+  test('denies reading a real .env through a reader command', () async {
+    expect(
+        await reasonFor('bash', <String, Object?>{'command': 'cat .env'}),
+        isNotNull);
+    expect(
+        await reasonFor('bash', <String, Object?>{'command': 'cat .env.local'}),
+        isNotNull);
+    expect(
+      await reasonFor('bash', <String, Object?>{'command': 'cat .env.example'}),
+      isNull,
+    );
+  });
+
+  test('allows reporting the length and passing a token as a header', () async {
+    expect(
+      await reasonFor('bash', <String, Object?>{
+        'command': r'echo ${#GITHUB_TOKEN}',
+      }),
+      isNull,
+    );
+    expect(
+      await reasonFor('bash', <String, Object?>{
+        'command': r'curl -H "Authorization: Bearer $GITHUB_TOKEN" https://api',
+      }),
+      isNull,
+    );
+  });
+
+  test('an ordinary command falls through instead of blocking the agent',
+      () async {
+    expect(
+      await reasonFor('bash', <String, Object?>{'command': 'flutter test test/widget_test.dart'}),
+      isNull,
+    );
+    expect(await reasonFor('bash', <String, Object?>{'command': 'dart analyze'}),
+        isNull);
+  });
+}

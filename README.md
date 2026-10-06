@@ -532,6 +532,8 @@ Unsupported packages are not automatically replaced. Existing code remains autho
 
 Generated projects receive `tool/hooks/protect-token.sh`, wired as a Claude Code `PreToolUse` hook through `.claude/settings.json`. It denies a Bash call that would print a token value, dump the environment, or use `curl -v`, so `SECURITY.md` is backed by the harness instead of only asking. Reporting a secret's length (`echo ${#GITHUB_TOKEN}`) and passing a token as an `Authorization` header stay allowed.
 
+Generated projects also receive `.opencode/plugins/protect-token.js`, an opencode plugin that denies a Bash call printing a secret, dumping the environment, using `curl -v`, or passing a secret on the command line, and denies reading a real `.env` through either the `read` tool or a reader command. Reporting a secret's length (`echo ${#GITHUB_TOKEN}`), passing a token as an `Authorization` header, and reading a committed `.env.example` stay allowed.
+
 A project that already has `.claude/settings.json` keeps its own file and the hook is not installed — the generator never overwrites an unmanaged file. Merge the `hooks.PreToolUse` entry by hand if you want the enforcement there.
 
 ## Progressive loading

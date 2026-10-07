@@ -134,6 +134,13 @@ void main() {
       () async {
     final project = Directory.systemTemp.createTempSync('agents-profile-test-');
     try {
+      // Firebase references are gated on pubspec: a cloud_firestore storage
+      // choice only materializes them once Firebase is actually a dependency.
+      File(
+        p.join(project.path, 'pubspec.yaml'),
+      ).writeAsStringSync(
+        'name: sample\ndependencies:\n  cloud_firestore: ^5.0.0\n',
+      );
       await RuleGenerator().apply(
         project,
         StackConfig(

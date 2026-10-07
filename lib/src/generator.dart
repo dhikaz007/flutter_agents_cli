@@ -134,6 +134,22 @@ class RuleGenerator {
       desired[rel] = entity.readAsBytesSync();
     }
 
+    // Firebase references beyond the setup guide are gated on the project
+    // actually depending on Firebase. The setup guide always installs: it is
+    // what walks an agent through adding those dependencies, so it cannot wait
+    // for them. Every apply() re-reads pubspec, which makes `agents sync`
+    // both install and retire the gated references.
+    if (!_hasFirebaseDependencies(project)) {
+      const gated = <String>[
+        'docs/rules/references/firebase-firestore.md',
+        'docs/rules/references/firebase-auth.md',
+        'docs/rules/references/firebase-observability.md',
+      ];
+      for (final rel in gated) {
+        desired.remove(rel);
+      }
+    }
+
     desired['docs/PROJECT-STACK.md'] = utf8.encode(_projectStack(config));
 
     // Dynamic rulesets keep every profile under docs/dynamic-rules/ only.
@@ -247,6 +263,20 @@ class RuleGenerator {
     desired['docs/RULES-MAP.md'] = utf8.encode(_rulesMap(config));
     return desired;
   }
+
+  /// True when pubspec.yaml depends on Firebase. firebase_options.dart is not
+  /// consulted on purpose: it only exists after setup ran, and the setup guide
+  /// is exactly what must be present before that.
+  bool _hasFirebaseDependencies(Directory project) {
+    final file = File(p.join(project.path, 'pubspec.yaml'));
+    if (!file.existsSync()) return false;
+    return _firebaseDependency.hasMatch(file.readAsStringSync());
+  }
+
+  static final RegExp _firebaseDependency = RegExp(
+    r'^\s*(firebase_\w+|cloud_firestore|flutterfire_cli):',
+    multiLine: true,
+  );
 
   void _discoverProjectRules(Directory project, StackConfig config) {
     final discovered = RuleMapper().unambiguousMappings(project);

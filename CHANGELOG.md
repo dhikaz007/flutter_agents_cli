@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.12.0
+
+- Gate the Firebase references on the project actually depending on Firebase. `docs/rules/references/firebase-setup.md` always installs because it is what walks an agent through adding Firebase to a fresh project, but `firebase-auth.md`, `firebase-firestore.md`, and `firebase-observability.md` install only when `pubspec.yaml` lists a Firebase dependency, and retire when the dependency leaves. Every apply re-reads pubspec, so `agents sync` is the only step a project needs after adopting or dropping Firebase. `firebase_options.dart` is deliberately not consulted: it only exists after setup ran, and the setup guide is exactly what must be present before that.
+
 ## 2.11.0
 
 - Turn the opencode token plugin from a gate into a tripwire. Nothing is denied any more: when a Bash call prints a secret, dumps the environment, sends one in a URL or request body, greps or network-copies a secrets file, or when a file tool touches credentials, keys, or a real `.env`, the plugin prints a `WARNING [protect-token]` line above the tool output - where the model reads it - or logs it for the user, and the call proceeds. A blocked command cost an agent its flow; a warning costs one line. The rules in `SECURITY.md` remain the actual prohibition.

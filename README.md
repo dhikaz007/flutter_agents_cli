@@ -1,4 +1,4 @@
-# flutter-agents CLI v2.13.1
+# flutter-agents CLI v2.14.0
 
 [![CI](https://github.com/dhikaz007/flutter_agents_cli/actions/workflows/ci.yml/badge.svg)](https://github.com/dhikaz007/flutter_agents_cli/actions/workflows/ci.yml)
 [![Release](https://github.com/dhikaz007/flutter_agents_cli/actions/workflows/release.yml/badge.svg)](https://github.com/dhikaz007/flutter_agents_cli/actions/workflows/release.yml)
@@ -218,6 +218,8 @@ feature_first_clean
 modular_feature
 custom_existing
 ```
+
+`structure show` prints the available profiles next to the current policy, and a typo in `structure set` lists them in the error.
 
 `structure set` changes **agent policy only**. It never moves application source files.
 

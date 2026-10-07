@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.14.0
+
+- Print the available architecture profiles in `structure show` and in the `structure set` error for an unknown profile, so discovering the valid choices no longer requires reading the registry or the README.
+
 ## 2.13.1
 
 - Align every usage description on the same row as its command, in a fixed description column, wrapping with a hanging indent when a description needs more room - never on the line below the command. Long syntax lines were shortened so the description always fits beside them.

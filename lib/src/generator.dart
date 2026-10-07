@@ -426,6 +426,10 @@ class RuleGenerator {
         p.join('docs', 'profiles', folder),
       p.join('docs', 'profiles'),
       p.join('docs', 'custom-rules'),
+      // The Claude Code hook retired in 2.10.0 leaves tool/hooks behind on
+      // legacy projects; it only disappears here when it holds nothing.
+      p.join('tool', 'hooks'),
+      'tool',
     ];
     for (final rel in candidates) {
       final dir = Directory(p.join(project.path, rel));

@@ -515,6 +515,10 @@ Future<void> runUninstall(Directory root, ArgResults command) async {
     adoption.removeImportedIndex(root);
     store.fileFor(root).deleteSync();
     _removeEmptyDirs(root);
+    for (final rel in <String>[p.join('tool', 'hooks'), 'tool']) {
+      final dir = Directory(p.join(root.path, rel));
+      if (dir.existsSync() && dir.listSync().isEmpty) dir.deleteSync();
+    }
   }
   stdout.writeln(dryRun ? 'Uninstall dry run:' : 'flutter-agents uninstalled:');
   for (final item in removed) stdout.writeln('  - $item');

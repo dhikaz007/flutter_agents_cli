@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.12.1
+
+- Retire the empty `tool/hooks/` folder that the 2.10.0 hook removal left behind on legacy projects. The empty-folder sweep now covers `tool/hooks` and `tool`, so `agents init` and `agents sync` remove the retired folder once it holds nothing, and a folder with user hooks inside is never touched. `agents uninstall` performs the same sweep after removing manifest files. `docs/project/` files were never uninstallable, not even with `--force` - they are not tracked by the manifest - and a test now pins that.
+
 ## 2.12.0
 
 - Gate the Firebase references on the project actually depending on Firebase. `docs/rules/references/firebase-setup.md` always installs because it is what walks an agent through adding Firebase to a fresh project, but `firebase-auth.md`, `firebase-firestore.md`, and `firebase-observability.md` install only when `pubspec.yaml` lists a Firebase dependency, and retire when the dependency leaves. Every apply re-reads pubspec, so `agents sync` is the only step a project needs after adopting or dropping Firebase. `firebase_options.dart` is deliberately not consulted: it only exists after setup ran, and the setup guide is exactly what must be present before that.

@@ -41,7 +41,7 @@ void main() {
       final result = runCli(['show']);
 
       expect(result.exitCode, 64);
-      expect(result.stderr, contains('Unknown command: show'));
+      expect(result.stderr, contains('Could not find a command named "show"'));
       expect(result.stderr, contains('agents preset show'));
       expect(result.stderr, contains('agents rule show'));
     });
@@ -82,8 +82,8 @@ void main() {
     test('usage explains each profile kind', () {
       final result = runCli(['--help']);
 
-      expect(result.stdout, contains('state              # state management'));
-      expect(result.stdout, contains('loading-inline     # inline spinners'));
+      expect(result.stdout, contains('# state management:'));
+      expect(result.stdout, contains('# inline spinners for buttons and rows.'));
     });
   });
 

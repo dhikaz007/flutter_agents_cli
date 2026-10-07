@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.13.1
+
+- Align every usage description on the same row as its command, in a fixed description column, wrapping with a hanging indent when a description needs more room - never on the line below the command. Long syntax lines were shortened so the description always fits beside them.
+- Style an unknown command after `flutter`: `Could not find a command named "show".` with a pointer to `agents -h`, and keep the did-you-mean suggestions underneath.
+
 ## 2.13.0
 
 - Make the console answer mistakes instead of dumping the full usage: an unknown command now prints `Unknown command: X` plus the closest command paths - including subcommands, so `agents show` suggests `agents preset show` and `agents rule show` - and exits 64.

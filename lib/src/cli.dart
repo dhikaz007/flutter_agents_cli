@@ -235,164 +235,262 @@ ArgParser _buildParser() {
   return parser;
 }
 
+// Command column of the usage output. Descriptions start on the same row and
+// wrap under that column, never directly under the command text.
+const int _usageCommandColumn = 48;
+
+const List<(String, List<(String, String)>)> _usageGroups = [
+  (
+    'Core:',
+    [
+      (
+        'agents init [--preset NAME|FILE]',
+        'install or refresh the rules: AGENTS.md, docs/rules, profiles. Re-running is safe: files you edited are preserved and reported, not overwritten.'
+      ),
+      (
+        'agents detect',
+        'report the detected stack without writing anything.'
+      ),
+      (
+        'agents sync',
+        're-apply the rules after the stack, pubspec, or rules changed. This is how a project picks up a newer CLI.'
+      ),
+      (
+        'agents doctor [--fix]',
+        'check the installation for drift and repair it.'
+      ),
+      (
+        'agents status',
+        'show what is installed and which files drifted.'
+      ),
+      (
+        'agents uninstall [--dry-run] [--force]',
+        'remove everything this CLI manages. User-owned files (docs/project/, custom rules) are never removed, even with --force.'
+      ),
+    ],
+  ),
+  (
+    'Profiles:',
+    [
+      (
+        'agents add <kind> <profile>',
+        'switch one concern to a profile, e.g. state to riverpod. Preview the result with agents explain first.'
+      ),
+      (
+        'agents remove <kind>',
+        'drop a concern back to the CLI default.'
+      ),
+      (
+        'agents explain <concern>',
+        'show which rule files load for a concern.'
+      ),
+    ],
+  ),
+  (
+    'Architecture:',
+    [
+      (
+        'agents structure show',
+        'print the detected feature and shared folder layout.'
+      ),
+      (
+        'agents structure set <profile>',
+        'record the architecture layout explicitly.'
+      ),
+    ],
+  ),
+  (
+    'Style:',
+    [
+      (
+        'agents style audit',
+        'audit widget code against the project style rules.'
+      ),
+    ],
+  ),
+  (
+    'Presets (a preset is a saved set of stack choices):',
+    [
+      ('agents preset list', 'list saved presets.'),
+      ('agents preset show <name>', "print one preset's full configuration."),
+      ('agents preset create [name]', 'start a new preset from the CLI defaults.'),
+      ('agents preset edit <name>', 'open the preset file in the editor.'),
+      ('agents preset set <name> <kind> [value]', 'set one stack choice in a preset.'),
+      (
+        'agents preset set <name> rule <layer>',
+        'pin a custom rule layer in a preset.'
+      ),
+      ('agents preset unset <name> <kind>', 'clear a stack choice from a preset.'),
+      ('agents preset unset <name> rule <layer>', 'clear a pinned rule layer.'),
+      ('agents preset save <name> [--force]', 'persist the current preset.'),
+      ('agents preset delete <name>', 'delete a saved preset.'),
+      ('agents preset export <file.yaml>', 'copy the preset to a YAML file.'),
+      (
+        'agents preset from-profile <name> <profile>',
+        'build a preset from a ruleset profile.'
+      ),
+    ],
+  ),
+  (
+    'Token/context:',
+    [
+      (
+        'agents context "task description"',
+        'preview the minimum rule context for a task, so you know what an agent will read before it reads it.'
+      ),
+    ],
+  ),
+  (
+    'Discovery:',
+    [
+      (
+        'agents learn [--write]',
+        'scan the codebase for conventions worth writing down.'
+      ),
+    ],
+  ),
+  (
+    'Custom rules:',
+    [
+      ('agents rule list [layer]', 'list your rule documents per layer.'),
+      ('agents rule add <layer> <file.md> [name]', 'register one of your rule documents.'),
+      ('agents rule remove <layer> <name>', 'unregister a rule document.'),
+      ('agents rule default <layer> <name|default>', 'mark a rule document as the layer default.'),
+      ('agents rule use <layer> <name|default>', 'activate a rule document for a layer.'),
+      ('agents rule show <layer> [name]', 'show the rule documents registered for a layer.'),
+    ],
+  ),
+  (
+    'Dynamic rulesets (a ruleset is a shared rules repository):',
+    [
+      ('agents ruleset add <name> <source>', 'register a rules repository.'),
+      ('agents ruleset list', 'list registered rulesets.'),
+      ('agents ruleset use <name> <profile>', 'activate a ruleset profile.'),
+      ('agents ruleset update <name>', 'pull the latest rules for a ruleset.'),
+      ('agents ruleset profiles <name>', 'list the profiles a ruleset ships.'),
+      ('agents ruleset map [--review]', 'match project rule docs to concerns.'),
+      ('agents ruleset apply <name> <concern...>', 'install rules for the named concerns.'),
+      ('agents ruleset link [--yes]', 'bridge an existing AGENTS.md to this CLI.'),
+      ('agents ruleset validate <name>', "check a ruleset's shape."),
+      ('agents ruleset diff <name>', 'compare installed rules against the ruleset.'),
+      ('agents ruleset status <name>', 'show what a ruleset has installed here.'),
+      ('agents ruleset lock / verify / restore', 'pin, verify, and restore locked rules.'),
+      ('agents ruleset audit', 'check installed rules for drift and staleness.'),
+      (
+        'agents ruleset upgrade-plan [name]',
+        'plan an upgrade or get a ruleset recommendation.'
+      ),
+    ],
+  ),
+  (
+    'Dependencies:',
+    [
+      ('agents dependency plan', 'preview pubspec changes without applying them.'),
+      ('agents dependency add [package ...] [--yes]', 'add packages with the safety checks of this CLI.'),
+      ('agents dependency remove <package> [--force]', 'remove packages.'),
+    ],
+  ),
+  (
+    'Migration planning:',
+    [
+      (
+        'agents migrate modular <from> <to>',
+        'plan a modular architecture migration.'
+      ),
+      (
+        'agents migrate structure <from> <to>',
+        'plan a folder layout migration.'
+      ),
+    ],
+  ),
+  (
+    'Other:',
+    [
+      ('agents version', 'print the CLI version.'),
+    ],
+  ),
+  (
+    'Profile kinds:',
+    [
+      ('architecture', 'how feature code is laid out (folders, layers).'),
+      ('state', 'state management: bloc, riverpod, provider.'),
+      ('routing', 'navigation: go_router, navigator 2, auto_route.'),
+      ('di', 'dependency injection: get_it, injectable.'),
+      ('network', 'HTTP client: dio, http, chopper.'),
+      ('storage', 'persistence: hive, isar, sqflite, cloud_firestore.'),
+      ('localization', 'i18n: flutter_l10n, easy_localization, slang.'),
+      ('assets', 'asset generation: flutter_gen.'),
+      ('codegen', 'model codegen: freezed, dart_mappable.'),
+      ('json-codegen', 'JSON serialization: json_serializable.'),
+      ('loading-blocking', 'full-screen loader for blocking waits.'),
+      ('loading-list', 'list placeholders: skeletonizer, shimmer.'),
+      ('loading-inline', 'inline spinners for buttons and rows.'),
+      ('pagination', 'paging: infinite scroll, page-based.'),
+    ],
+  ),
+];
+
+// One help row: the command, padding, then the description starting on the
+// same row and wrapping with a hanging indent under the description column.
+String _usageLine(String command, String description) {
+  final head = '  $command';
+  final body = _hangingDescription(description);
+  if (head.length >= _usageCommandColumn) {
+    return '$head\n$body';
+  }
+  final pad = ' ' * (_usageCommandColumn - head.length);
+  return '$head$pad# $body';
+}
+
+String _hangingDescription(String text) {
+  final width = 100 - _usageCommandColumn;
+  final pad = ' ' * (_usageCommandColumn + 2);
+  final lines = <String>[];
+  var line = '';
+  for (final word in text.split(' ')) {
+    if (line.isEmpty) {
+      line = word;
+    } else if (line.length + 1 + word.length <= width) {
+      line = '$line $word';
+    } else {
+      lines.add(line);
+      line = word;
+    }
+  }
+  if (line.isNotEmpty) lines.add(line);
+  return lines.join('\n$pad');
+}
+
 void _usage() {
-  stdout.writeln('''
-flutter-agents $cliVersion
-
-Dynamic, project-aware AGENTS rule manager for Flutter.
-
-Core:
-  agents init [--preset NAME|FILE] [--mode existing|new] [--adopt keep|import|merge|replace|cancel]
-      # install or refresh the rules: AGENTS.md, docs/rules, profiles
-  agents detect
-      # report the detected stack without writing anything
-  agents sync
-      # re-apply the rules after the stack or rules changed
-  agents doctor [--fix]
-      # check the installation for drift and repair it
-  agents status
-      # show what is installed and which files drifted
-  agents uninstall [--dry-run] [--force]
-      # remove everything this CLI manages; user-owned files stay
-
-Profiles:
-  agents add <kind> <profile>
-      # switch one concern to a profile, e.g. state to riverpod
-  agents remove <kind>
-      # drop a concern back to the CLI default
-  agents explain <concern>
-      # show which rule files load for a concern
-
-Architecture:
-  agents structure show
-      # print the detected feature and shared folder layout
-  agents structure set <profile>
-      # record the architecture layout explicitly
-
-Style:
-  agents style audit
-      # audit widget code against the project style rules
-
-Presets (a preset is a saved set of stack choices):
-  agents preset list
-      # list saved presets
-  agents preset show <name>
-      # print one preset's full configuration
-  agents preset create [name]
-      # start a new preset from the CLI defaults
-  agents preset edit <name>
-      # open the preset file in \$EDITOR
-  agents preset set <name> <kind> [value]
-      # set one stack choice in a preset
-  agents preset set <name> rule <layer> [rule-name]
-      # pin a custom rule layer in a preset
-  agents preset unset <name> <kind>
-      # clear a stack choice from a preset
-  agents preset unset <name> rule <layer>
-      # clear a pinned rule layer
-  agents preset save <name> [--force]
-      # persist the current preset
-  agents preset delete <name>
-      # delete a saved preset
-  agents preset export <file.yaml>
-      # copy the preset to a YAML file
-  agents preset from-profile <name> <ruleset> <profile>
-      # build a preset from a ruleset profile
-
-Token/context:
-  agents context "task description"
-      # preview the minimum rule context loaded for a task
-
-Discovery:
-  agents learn [--write]
-      # scan the codebase for conventions worth writing down
-
-Custom rules:
-  agents rule list [layer]
-      # list your rule documents per layer
-  agents rule add <layer> <file.md> [name]
-      # register one of your rule documents
-  agents rule remove <layer> <name>
-      # unregister a rule document
-  agents rule default <layer> <name|default>
-      # mark a rule document as the layer default
-  agents rule use <layer> <name|default>
-      # activate a rule document for a layer
-  agents rule show <layer> [name]
-      # show the rule documents registered for a layer
-
-Dynamic rulesets (a ruleset is a shared rules repository):
-  agents ruleset add <name> <git-url-or-local-path>
-      # register a rules repository
-  agents ruleset list
-      # list registered rulesets
-  agents ruleset use <name> <profile>
-      # activate a ruleset profile
-  agents ruleset update <name>
-      # pull the latest rules for a ruleset
-  agents ruleset profiles <name>
-      # list the profiles a ruleset ships
-  agents ruleset map [--review]
-      # match project rule docs to concerns
-  agents ruleset apply <name> <concern...>
-      # install rules for the named concerns
-  agents ruleset link [--yes]
-      # bridge an existing AGENTS.md to this CLI
-  agents ruleset validate <name>
-      # check a ruleset's shape
-  agents ruleset diff <name>
-      # compare installed rules against the ruleset
-  agents ruleset status <name>
-      # show what a ruleset has installed here
-  agents ruleset lock | verify | restore
-      # pin, verify, and restore locked rules
-  agents ruleset audit
-      # check installed rules for drift and staleness
-  agents ruleset upgrade-plan | recommend [name]
-      # plan an upgrade or get a ruleset recommendation
-
-Dependencies:
-  agents dependency plan
-      # preview pubspec changes without applying them
-  agents dependency add [package ...] [--yes]
-      # add packages with the CLI's safety checks
-  agents dependency remove <package> [--force] [--yes]
-      # remove packages
-
-Migration planning:
-  agents migrate modular <v5|v6|v7> <v5|v6|v7> --dry-run [--output report.md]
-      # plan a modular architecture migration
-  agents migrate structure <from-profile> <to-profile> --dry-run [--output report.md]
-      # plan a folder layout migration
-
-Other:
-  agents version
-      # print the CLI version
-
-Profile kinds:
-  architecture       # how feature code is laid out (folders, layers)
-  state              # state management: bloc, riverpod, provider
-  routing            # navigation: go_router, navigator 2, auto_route
-  di                 # dependency injection: get_it, injectable
-  network            # HTTP client: dio, http, chopper
-  storage            # persistence: hive, isar, sqflite, cloud_firestore
-  localization       # i18n: flutter_l10n, easy_localization, slang
-  assets             # asset generation: flutter_gen
-  codegen            # model codegen: freezed, dart_mappable
-  json-codegen       # JSON serialization: json_serializable
-  loading-blocking   # full-screen loader for blocking waits
-  loading-list       # list placeholders: skeletonizer, shimmer
-  loading-inline     # inline spinners for buttons and rows
-  pagination         # paging: infinite scroll, page-based
-
-Use `agents context` to preview the minimum rule context for a coding task.
-''');
+  final buffer = StringBuffer()
+    ..writeln('flutter-agents $cliVersion')
+    ..writeln()
+    ..writeln('Dynamic, project-aware AGENTS rule manager for Flutter.')
+    ..writeln();
+  for (final group in _usageGroups) {
+    buffer
+      ..writeln(group.$1)
+      ..writeln();
+    for (final entry in group.$2) {
+      buffer.writeln(_usageLine(entry.$1, entry.$2));
+    }
+    buffer.writeln();
+  }
+  buffer.writeln(
+    'Use `agents context` to preview the minimum rule context for a coding task.',
+  );
+  stdout.write(buffer.toString());
 }
 
 // Suggestions walk every command path in the parser, so a bare subcommand name
 // such as `show` still finds `preset show` and `rule show`.
 void _unknownCommand(String input, ArgParser parser) {
-  stderr.writeln('Unknown command: $input');
+  stderr.writeln('Could not find a command named "$input".');
+  stderr.writeln();
+  stderr.writeln(
+    "Run 'agents -h' (or 'agents <command> -h') for available agents commands",
+  );
+  stderr.writeln('and options.');
   final paths = <String>[];
   void walk(ArgParser node, String prefix) {
     for (final entry in node.commands.entries) {
@@ -423,9 +521,8 @@ void _unknownCommand(String input, ArgParser parser) {
   scored.sort((a, b) => a.value.compareTo(b.value));
   final suggestions =
       scored.take(5).map((entry) => '  agents ${entry.key}').toList();
-  if (suggestions.isEmpty) {
-    stderr.writeln("Run 'flutter-agents --help' to see every command.");
-  } else {
+  if (suggestions.isNotEmpty) {
+    stderr.writeln();
     stderr.writeln('Did you mean:');
     for (final suggestion in suggestions) {
       stderr.writeln(suggestion);

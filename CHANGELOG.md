@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.11.0
+
+- Turn the opencode token plugin from a gate into a tripwire. Nothing is denied any more: when a Bash call prints a secret, dumps the environment, sends one in a URL or request body, greps or network-copies a secrets file, or when a file tool touches credentials, keys, or a real `.env`, the plugin prints a `WARNING [protect-token]` line above the tool output - where the model reads it - or logs it for the user, and the call proceeds. A blocked command cost an agent its flow; a warning costs one line. The rules in `SECURITY.md` remain the actual prohibition.
+
 ## 2.10.3
 
 - Widen the opencode plugin from a `.env` guard to a secrets guard. The reader rule now covers `grep`, `rg`, `ag`, and `ack`, and a new secrets-file vocabulary - `key.properties`, `.netrc`, keystores, SSH private keys, `secrets.yaml`/`secrets.json`, `credentials`, and service-account JSON - is denied to the `read`, `write`, and `edit` tools.

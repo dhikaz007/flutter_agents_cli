@@ -101,7 +101,7 @@ If it does not exist, inspect existing repository/model/constants/network conven
 - Presentation must not bypass the project's established repository/network boundary.
 - Mutations need duplicate-submit protection and documented project mutation safety.
 - Never hardcode/log secrets, credentials, or tokens.
-- Report a secret's presence and length (`${#GITHUB_TOKEN}`), never its value. `.opencode/plugins/protect-token.js` denies a Bash call that prints one, dumps the environment, sends a secret in a URL or request body, greps or network-copies a secrets file, and denies reading or writing credentials, keys, and real `.env` files; do not work around it.
+- Report a secret's presence and length (`${#GITHUB_TOKEN}`), never its value. `.opencode/plugins/protect-token.js` warns - it never blocks - when a Bash call prints a secret, dumps the environment, sends one in a URL or body, greps or network-copies a secrets file, or when a file tool touches credentials, keys, or a real `.env`; a warning is a rule violation signal, do not ignore it.
 - Never manually edit generated files.
 - Do not commit/push unless explicitly requested.
 - Run required focused tests/codegen when relevant and `flutter analyze` before completion when Flutter tooling is available.

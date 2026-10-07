@@ -19,9 +19,6 @@ const SECRETS =
 // the URL rule still allows.
 const URL_SECRETS = SECRETS.replace('FIREBASE_API_KEY|', '')
 
-const deny = (reason) => {
-  throw new Error(reason)
-}
 
 // Printing a value: an expansion inside a printer.
 const PRINTS_SECRET = new RegExp(
@@ -132,35 +129,83 @@ const touchesSecretPath = (command, match) => {
   return false
 }
 
-export const ProtectToken = async () => ({
-  'tool.execute.before': async (input, output) => {
-    if (input.tool === 'bash') {
-      if (typeof output.args.command !== 'string') deny(REASONS.missingBashArg)
-      const command = output.args.command
-      if (PRINTS_SECRET.test(command)) deny(REASONS.printsSecret)
-      if (DUMPS_ENV.test(command)) deny(REASONS.dumpsEnv)
-      if (CURL_VERBOSE.test(command)) deny(REASONS.curlVerbose)
-      if (SECRET_ON_ARGV.test(command)) deny(REASONS.secretOnArgv)
-      if (SECRET_IN_URL.test(command)) deny(REASONS.secretInUrl)
-      for (const reader of command.matchAll(ENV_READER)) {
-        if (touchesSecretPath(command, reader)) deny(REASONS.envRead)
-      }
-      for (const exit of command.matchAll(NETWORK_EXIT)) {
-        if (touchesSecretPath(command, exit)) deny(REASONS.envRead)
-      }
-      return
+// Warning keys fired by one Bash command. Collects everything instead of
+// stopping at the first match.
+const commandWarnings = (command) => {
+  const hits = []
+  if (PRINTS_SECRET.test(command)) hits.push(REASONS.printsSecret)
+  if (DUMPS_ENV.test(command)) hits.push(REASONS.dumpsEnv)
+  if (CURL_VERBOSE.test(command)) hits.push(REASONS.curlVerbose)
+  if (SECRET_ON_ARGV.test(command)) hits.push(REASONS.secretOnArgv)
+  if (SECRET_IN_URL.test(command)) hits.push(REASONS.secretInUrl)
+  for (const reader of command.matchAll(ENV_READER)) {
+    if (touchesSecretPath(command, reader)) {
+      hits.push(REASONS.envRead)
+      break
     }
-    if (input.tool === 'read') {
-      if (typeof output.args.filePath !== 'string') deny(REASONS.missingReadArg)
-      if (isSecretPath(basename(output.args.filePath))) {
-        deny(REASONS.envRead)
-      }
+  }
+  for (const exit of command.matchAll(NETWORK_EXIT)) {
+    if (touchesSecretPath(command, exit)) {
+      hits.push(REASONS.envRead)
+      break
     }
-    if (input.tool === 'write' || input.tool === 'edit') {
-      if (typeof output.args.filePath !== 'string') deny(REASONS.missingReadArg)
-      if (isSecretPath(basename(output.args.filePath))) {
-        deny(REASONS.secretWrite)
-      }
+  }
+  return hits
+}
+
+const TAG = 'WARNING [protect-token]'
+
+export const ProtectToken = async ({ client } = {}) => {
+  const log = (message) => {
+    if (client && client.app && client.app.log) {
+      client
+        .app
+        .log({
+          body: {
+            service: 'protect-token',
+            level: 'warn',
+            message,
+          },
+        })
+        .catch(() => {})
     }
-  },
-})
+  }
+  return {
+    'tool.execute.before': async (input, output) => {
+      try {
+        if (input.tool === 'bash') {
+          if (typeof output.args.command !== 'string') {
+            log(TAG + ' ' + REASONS.missingBashArg)
+            return
+          }
+          const hits = commandWarnings(output.args.command)
+          if (hits.length === 0) return
+          log(TAG + ' ' + hits.join(' | '))
+          // Print the warning above the tool output so the model reads it. The
+          // warning texts hold no single quotes, so this quoting is safe.
+          output.args.command =
+            "printf '%s\\n' '" + TAG + ': ' + hits.join(' | ') + "'; " +
+            output.args.command
+          return
+        }
+        if (
+          input.tool === 'read' ||
+          input.tool === 'write' ||
+          input.tool === 'edit'
+        ) {
+          if (typeof output.args.filePath !== 'string') {
+            log(TAG + ' ' + REASONS.missingReadArg)
+            return
+          }
+          if (isSecretPath(basename(output.args.filePath))) {
+            const key =
+              input.tool === 'read' ? REASONS.envRead : REASONS.secretWrite
+            log(TAG + ' ' + key + ' (' + output.args.filePath + ')')
+          }
+        }
+      } catch (error) {
+        // An advisory plugin must never break the tool call.
+      }
+    },
+  }
+}

@@ -1,4 +1,4 @@
-# flutter-agents CLI v2.10.3
+# flutter-agents CLI v2.11.0
 
 [![CI](https://github.com/dhikaz007/flutter_agents_cli/actions/workflows/ci.yml/badge.svg)](https://github.com/dhikaz007/flutter_agents_cli/actions/workflows/ci.yml)
 [![Release](https://github.com/dhikaz007/flutter_agents_cli/actions/workflows/release.yml/badge.svg)](https://github.com/dhikaz007/flutter_agents_cli/actions/workflows/release.yml)
@@ -530,7 +530,7 @@ Unsupported packages are not automatically replaced. Existing code remains autho
 
 ## Secret handling hook
 
-Generated projects receive `.opencode/plugins/protect-token.js`, an opencode plugin that denies a Bash call printing a secret, dumping the environment, using `curl -v`, passing a secret on the command line or in a request body, or interpolating a secret into a URL; denies grepping or network-copying a secrets file; and denies reading or writing credentials, keys, and real `.env` files through the `read`, `write`, and `edit` tools. `docs/rules/SECURITY.md` is backed by the harness instead of only asking. Reporting a secret's length (`echo ${#GITHUB_TOKEN}`), passing a token as an `Authorization` header, reading a committed `.env.example`, and Firebase web API keys in URLs stay allowed. A recursive search over a directory and an interpreter such as `python3 -c` still reach a secrets file by design - the plugin is not a sandbox.
+Generated projects receive `.opencode/plugins/protect-token.js`, an opencode plugin that watches every Bash call and every `read`, `write`, and `edit` of a secrets file. When a call prints a secret, dumps the environment, uses `curl -v`, passes a secret on the command line, in a request body, or in a URL, greps or network-copies a secrets file, or touches credentials and keys, the plugin warns and lets the call proceed - it never blocks. For `bash` the warning is printed above the tool output, where the model reads it; for the file tools it goes to the opencode log for you. `docs/rules/SECURITY.md` remains the rule; the plugin is only a tripwire so a leak-prone command never passes silently. Reporting a secret's length (`echo ${#GITHUB_TOKEN}`), passing a token as an `Authorization` header, reading a committed `.env.example`, and Firebase web API keys in URLs stay clean. A recursive search over a directory and an interpreter such as `python3 -c` still reach a secrets file by design - this is not a sandbox.
 
 ## Progressive loading
 

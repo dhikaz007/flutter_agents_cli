@@ -623,6 +623,8 @@ agents rule use state default
 
 `default` means the built-in CLI profile/rule. Active custom rules are copied into `docs/custom-rules/` so coding agents can read project-local, stable rule files. Precedence is: explicit current/project override > selected user custom rule > built-in CLI default/profile.
 
+A rule layer is the folder name under `~/.flutter-agents/rules/`. `agents rule use`, `agents rule default`, and `agents rule show` reject an unknown layer with the installed layer list instead of silently recording it. `agents preset set <name> rule <layer>` only warns, so a preset stays portable to machines that have other layers.
+
 ## Dynamic rulesets (v1.6)
 
 Use a versioned external ruleset without copying its files into every project. Add it once to the local flutter-agents cache, initialize the Flutter project normally, then choose one profile from that ruleset:

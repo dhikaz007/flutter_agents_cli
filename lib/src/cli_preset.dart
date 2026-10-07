@@ -201,6 +201,11 @@ void runPreset(Directory root, ArgResults command) {
       }
       final layer = sub.rest[2];
       final store = UserRuleStore();
+      final knownLayers = store.layers();
+      if (knownLayers.isNotEmpty && !knownLayers.contains(layer)) {
+        stdout.writeln('! Unknown rule layer: $layer');
+        stdout.writeln('  Known layers: ${knownLayers.join(', ')}');
+      }
       final options = <String>['default', ...store.list(layer)];
       String? selected = sub.rest.length >= 4 ? sub.rest[3] : null;
       if (selected == null) {
@@ -223,6 +228,9 @@ void runPreset(Directory root, ArgResults command) {
       final kind = sub.rest[1];
       if (!ProfileRegistry.options.containsKey(kind)) {
         stderr.writeln('Unknown profile kind: $kind');
+        stderr.writeln(
+          'Available kinds: ${ProfileRegistry.options.keys.join(', ')}',
+        );
         exitCode = 64;
         return;
       }
@@ -279,6 +287,9 @@ void runPreset(Directory root, ArgResults command) {
       final kind = sub.rest[1];
       if (!ProfileRegistry.options.containsKey(kind)) {
         stderr.writeln('Unknown profile kind: $kind');
+        stderr.writeln(
+          'Available kinds: ${ProfileRegistry.options.keys.join(', ')}',
+        );
         exitCode = 64;
         return;
       }

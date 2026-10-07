@@ -28,6 +28,14 @@ Future<void> runAdd(Directory root, ArgResults command) async {
     return;
   }
   final profile = args[1];
+  if (!ProfileRegistry.options.containsKey(kind)) {
+    stderr.writeln('Unknown kind: $kind');
+    stderr.writeln(
+      'Available kinds: ${ProfileRegistry.options.keys.join(', ')}',
+    );
+    exitCode = 64;
+    return;
+  }
   if (!ProfileRegistry.supports(kind, profile)) {
     stderr.writeln('Unsupported profile: $kind/$profile');
     stderr.writeln('Available: ${ProfileRegistry.values(kind).join(', ')}');
@@ -271,6 +279,20 @@ Future<void> runStructure(Directory root, ArgResults command) async {
 Future<void> runRule(Directory root, ArgResults command) async {
   final sub = command.command;
   final store = UserRuleStore();
+  bool requireLayer(String layer) {
+    final known = store.layers();
+    if (known.contains(layer)) return true;
+    stderr.writeln('Unknown rule layer: $layer');
+    stderr.writeln(
+      known.isEmpty
+          ? 'No rule layers installed yet. Create a folder under '
+              '${p.join(store.root.path, 'rules')} first.'
+          : 'Available: ${known.join(', ')}',
+    );
+    exitCode = 64;
+    return false;
+  }
+
   if (sub == null || sub.name == 'list') {
     final filter = sub?.rest.isNotEmpty == true ? sub!.rest.first : null;
     final defaults = store.readDefaults();
@@ -319,6 +341,7 @@ Future<void> runRule(Directory root, ArgResults command) async {
       exitCode = 64;
       return;
     }
+    if (!requireLayer(sub.rest[0])) return;
     store.setDefault(
       sub.rest[0],
       sub.rest[1] == 'default' ? null : sub.rest[1],
@@ -337,6 +360,7 @@ Future<void> runRule(Directory root, ArgResults command) async {
       return;
     }
     final layer = sub.rest[0];
+    if (!requireLayer(layer)) return;
     final name = sub.rest.length > 1 ? sub.rest[1] : store.defaultFor(layer);
     if (name == null) {
       stdout.writeln('$layer uses CLI default rule.');
@@ -364,6 +388,7 @@ Future<void> runRule(Directory root, ArgResults command) async {
       return;
     }
     final layer = sub.rest[0];
+    if (!requireLayer(layer)) return;
     final name = sub.rest[1];
     final c = manifest.config.copy();
     if (name == 'default') {

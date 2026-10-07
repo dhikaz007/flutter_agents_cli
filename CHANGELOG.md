@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.14.1
+
+- Validate the rule layer in `agents rule use`, `agents rule default`, and `agents rule show`, so a typo such as `stat` no longer silently records `bogus-layer: CLI default` into the manifest and `docs/PROJECT-STACK.md`. An unknown layer exits 64 with the installed layer list, or a hint to create the first layer folder when none exist.
+- Warn instead of failing when `agents preset set <name> rule <layer>` names a layer this machine has never installed, so presets stay portable across machines while the typo stays visible.
+- List the valid profile kinds when `agents add`, `agents preset set`, or `agents preset unset` receives an unknown kind, instead of printing an empty `Available:` line.
+
 ## 2.14.0
 
 - Print the available architecture profiles in `structure show` and in the `structure set` error for an unknown profile, so discovering the valid choices no longer requires reading the registry or the README.

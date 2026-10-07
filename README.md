@@ -1,4 +1,4 @@
-# flutter-agents CLI v2.10.2
+# flutter-agents CLI v2.10.3
 
 [![CI](https://github.com/dhikaz007/flutter_agents_cli/actions/workflows/ci.yml/badge.svg)](https://github.com/dhikaz007/flutter_agents_cli/actions/workflows/ci.yml)
 [![Release](https://github.com/dhikaz007/flutter_agents_cli/actions/workflows/release.yml/badge.svg)](https://github.com/dhikaz007/flutter_agents_cli/actions/workflows/release.yml)
@@ -530,9 +530,7 @@ Unsupported packages are not automatically replaced. Existing code remains autho
 
 ## Secret handling hook
 
-Generated projects receive `.opencode/plugins/protect-token.js`, an opencode plugin that denies a Bash call that would print a token value, dump the environment, or use `curl -v`, and denies reading a real `.env` either through the `read` tool or through a reader command such as `cat`. `SECURITY.md` is backed by the harness instead of only asking. Reporting a secret's length (`echo ${#GITHUB_TOKEN}`), passing a token as an `Authorization` header, and reading a committed `.env.example` stay allowed.
-
-The plugin is opencode-specific. On another agent the same rules apply from `SECURITY.md` without the harness check.
+Generated projects receive `.opencode/plugins/protect-token.js`, an opencode plugin that denies a Bash call printing a secret, dumping the environment, using `curl -v`, passing a secret on the command line or in a request body, or interpolating a secret into a URL; denies grepping or network-copying a secrets file; and denies reading or writing credentials, keys, and real `.env` files through the `read`, `write`, and `edit` tools. `docs/rules/SECURITY.md` is backed by the harness instead of only asking. Reporting a secret's length (`echo ${#GITHUB_TOKEN}`), passing a token as an `Authorization` header, reading a committed `.env.example`, and Firebase web API keys in URLs stay allowed. A recursive search over a directory and an interpreter such as `python3 -c` still reach a secrets file by design - the plugin is not a sandbox.
 
 ## Progressive loading
 

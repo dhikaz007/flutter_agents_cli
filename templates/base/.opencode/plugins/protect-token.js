@@ -15,6 +15,10 @@
 const SECRETS =
   'GITHUB_TOKEN|GH_TOKEN|GITLAB_TOKEN|FIREBASE_TOKEN|FIREBASE_API_KEY|FLUTTERFIRE_TOKEN|GCLOUD_SERVICE_KEY|SUPABASE_SERVICE_ROLE|OPENAI_API_KEY|ANTHROPIC_API_KEY|GEMINI_API_KEY|NPM_TOKEN|PUB_HOSTED_URL|DART_AUTH_TOKEN'
 
+// A Firebase web API key travels in URLs by design, so it is the one secret
+// the URL rule still allows.
+const URL_SECRETS = SECRETS.replace('FIREBASE_API_KEY|', '')
+
 const deny = (reason) => {
   throw new Error(reason)
 }
@@ -34,13 +38,24 @@ const DUMPS_ENV = /(^|[|;&]\s*)(env|printenv|export -p|set)\s*($|[|;&])/i
 const CURL_VERBOSE = /curl[^|;&]*(-v|--verbose|--trace(-ascii|-ascii)?|--trace-config)/i
 
 // Debug/network tooling that echoes a full request, headers included.
-const SECRET_ON_ARGV = new RegExp(`(dart-define|--verbose)\\s[^|;&]*\\$\\{?(${SECRETS})`, 'i')
+const SECRET_ON_ARGV = new RegExp(`(dart-define|--verbose|-d|--data(?:-raw|-binary)?|--form|-F)(?:\\s|=)[^|;&]*\\$\\{?(${SECRETS})`, 'i')
+
+// A secret interpolated into a URL travels to the URL host.
+const SECRET_IN_URL = new RegExp(
+  `(?:https?|wss?)://[^\s|;&]*\\$\{?(${URL_SECRETS})`,
+  'i',
+)
 
 // Reading a real .env through cat, head, or a pager. Global so matchAll finds
 // every reader command on the line; matchAll clones the regex, so lastIndex
 // never leaks between calls.
-const ENV_READER = /(?:^|[|;&]\s*)(?:cat|head|tail|less|more|bat)\s+/gi
+const ENV_READER =
+  /(?:^|[|;&]\s*)(?:cat|head|tail|less|more|bat|grep|rg|ag|ack)\s+/gi
 
+// Copying a secrets file off the machine. Local staging (cp, mv, tar, zip)
+// stays allowed; the network boundary is what this rule guards.
+const NETWORK_EXIT =
+  /(?:^|[|;&]\s*)(?:scp|sftp|rsync|rcp|nc|netcat|aws|gcloud|gsutil|az|docker|kubectl)\s+/gi
 const REASONS = {
   printsSecret:
     'Blocked: this command prints a secret value. Report the presence and length instead, and pass the token to a tool as an auth header.',
@@ -56,6 +71,10 @@ const REASONS = {
     'Blocked: the Bash command argument is missing, so the tool contract may have changed. Re-send the command through the Bash tool or report the mismatch.',
   missingReadArg:
     'Blocked: the read file path is missing, so the tool contract may have changed. Report the mismatch instead of retrying the read.',
+  secretInUrl:
+    'Blocked: this command interpolates a secret into a URL, which sends it to the URL host. Pass it as an auth header instead.',
+  secretWrite:
+    'Blocked: this writes to a credentials or key file. Ask the user before touching secrets storage.',
 }
 
 // Committed templates: how an agent learns the variable names.
@@ -76,6 +95,42 @@ const isRealEnv = (name) =>
   name === '.env' ||
   name.endsWith('.env') ||
   (name.startsWith('.env.') && !ENV_TEMPLATES.has(name))
+// Credential and key files by basename. Not exhaustive; .env names are
+// handled by isRealEnv above.
+const SECRET_FILES = new Set([
+  'key.properties',
+  '.netrc',
+  'secrets.yaml',
+  'secrets.json',
+  'credentials',
+  'id_rsa',
+  'id_dsa',
+  'id_ecdsa',
+  'id_ed25519',
+])
+
+const SECRET_SUFFIXES = ['.jks', '.keystore', '.p12', '.pfx', '.pem', '.key']
+
+const isSecretPath = (name) =>
+  isRealEnv(name) ||
+  SECRET_FILES.has(name) ||
+  SECRET_SUFFIXES.some((suffix) => name.endsWith(suffix)) ||
+  /^service-account.*\.json$/.test(name)
+
+const segmentAfter = (command, match) =>
+  command.slice(match.index + match[0].length).split(/[|;&]/)[0]
+
+// True when one of the path arguments after a reader or copy command names
+// a secrets file.
+const touchesSecretPath = (command, match) => {
+  for (const token of segmentAfter(command, match).split(/\s+/)) {
+    const eq = token.indexOf('=')
+    for (const candidate of eq === -1 ? [token] : [token, token.slice(eq + 1)]) {
+      if (isSecretPath(basename(stripQuotes(candidate)))) return true
+    }
+  }
+  return false
+}
 
 export const ProtectToken = async () => ({
   'tool.execute.before': async (input, output) => {
@@ -86,27 +141,26 @@ export const ProtectToken = async () => ({
       if (DUMPS_ENV.test(command)) deny(REASONS.dumpsEnv)
       if (CURL_VERBOSE.test(command)) deny(REASONS.curlVerbose)
       if (SECRET_ON_ARGV.test(command)) deny(REASONS.secretOnArgv)
+      if (SECRET_IN_URL.test(command)) deny(REASONS.secretInUrl)
       for (const reader of command.matchAll(ENV_READER)) {
-        const segment = command
-          .slice(reader.index + reader[0].length)
-          .split(/[|;&]/)[0]
-        for (const token of segment.split(/\s+/)) {
-          // A flag such as --file=.env carries the path after the equals sign.
-          const eq = token.indexOf('=')
-          const candidates =
-            eq === -1 ? [token] : [token, token.slice(eq + 1)]
-          for (const candidate of candidates) {
-            if (isRealEnv(basename(stripQuotes(candidate)))) {
-              deny(REASONS.envRead)
-            }
-          }
-        }
+        if (touchesSecretPath(command, reader)) deny(REASONS.envRead)
+      }
+      for (const exit of command.matchAll(NETWORK_EXIT)) {
+        if (touchesSecretPath(command, exit)) deny(REASONS.envRead)
       }
       return
     }
     if (input.tool === 'read') {
       if (typeof output.args.filePath !== 'string') deny(REASONS.missingReadArg)
-      if (isRealEnv(basename(output.args.filePath))) deny(REASONS.envRead)
+      if (isSecretPath(basename(output.args.filePath))) {
+        deny(REASONS.envRead)
+      }
+    }
+    if (input.tool === 'write' || input.tool === 'edit') {
+      if (typeof output.args.filePath !== 'string') deny(REASONS.missingReadArg)
+      if (isSecretPath(basename(output.args.filePath))) {
+        deny(REASONS.secretWrite)
+      }
     }
   },
 })

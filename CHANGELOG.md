@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.10.3
+
+- Widen the opencode plugin from a `.env` guard to a secrets guard. The reader rule now covers `grep`, `rg`, `ag`, and `ack`, and a new secrets-file vocabulary - `key.properties`, `.netrc`, keystores, SSH private keys, `secrets.yaml`/`secrets.json`, `credentials`, and service-account JSON - is denied to the `read`, `write`, and `edit` tools.
+- Deny a secret passed in a URL or in a curl request body (`-d`, `--data`, `--form`), and deny network copies of a secrets file through `scp`, `rsync`, `aws`, `gcloud`, `docker`, and friends. Local staging such as `cp .env.example .env` and `tar` stays allowed, and a Firebase web API key in a URL stays allowed because it is designed to travel there.
+- Say in `SECURITY.md` what the plugin still cannot see: a recursive search over a directory or an interpreter such as `python3 -c` reaches a secrets file by design.
+
 ## 2.10.2
 
 - Fix two over-deny cases in the opencode plugin and close one under-deny. The environment-dump rule now fires only where a command can start, so `cd env`, `ls env`, and `npm run env` are no longer denied; the trade-off is that `sudo env` and a subshell `` `env` `` are no longer denied either. The `.env` rule now covers any file whose name ends in `.env` (so `prod.env` is denied with the reader reason instead of the dump reason), and a flag value after an equals sign such as `--config-file=.env` is now inspected.

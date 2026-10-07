@@ -225,6 +225,9 @@ Future<void> runStructure(Directory root, ArgResults command) async {
     stdout.writeln('Feature root : ${manifest.config.featureRoot ?? '-'}');
     stdout.writeln('Shared root  : ${manifest.config.sharedRoot ?? '-'}');
     stdout.writeln(
+      'Available    : ${ProfileRegistry.values('architecture').join(', ')}',
+    );
+    stdout.writeln(
       'This command reports policy only; it does not migrate source folders.',
     );
     return;
@@ -238,6 +241,9 @@ Future<void> runStructure(Directory root, ArgResults command) async {
     final profile = sub.rest.first;
     if (!ProfileRegistry.supports('architecture', profile)) {
       stderr.writeln('Unknown architecture profile: $profile');
+      stderr.writeln(
+        'Available: ${ProfileRegistry.values('architecture').join(', ')}',
+      );
       exitCode = 64;
       return;
     }

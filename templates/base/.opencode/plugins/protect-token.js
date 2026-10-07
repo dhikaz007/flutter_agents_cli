@@ -25,8 +25,10 @@ const PRINTS_SECRET = new RegExp(
   'i',
 )
 
-// A whole-environment dump.
-const DUMPS_ENV = new RegExp(`(^|[^-a-z0-9])(env|printenv|export -p|set)\\s*($|[|;&])`, 'i')
+// A whole-environment dump, only where a command can start. A bare `env` in
+// argument position (cd env, ls env, npm run env) is a folder or task name, not
+// a dump, so other positions stay allowed.
+const DUMPS_ENV = /(^|[|;&]\s*)(env|printenv|export -p|set)\s*($|[|;&])/i
 
 // curl verbose modes print the Authorization header to stderr.
 const CURL_VERBOSE = /curl[^|;&]*(-v|--verbose|--trace(-ascii|-ascii)?|--trace-config)/i
@@ -66,11 +68,14 @@ const ENV_TEMPLATES = new Set([
 
 const basename = (filePath) => filePath.split(/[\\/]/).pop() ?? ''
 
-// One layer of shell quoting is not part of the file name.
-const stripQuotes = (token) => token.replace(/^["'](.*)["']$/, '$1')
+// One layer of shell quoting is not part of the file name. Strip any run of
+// quotes at the ends; a token the shell actually produced never has them.
+const stripQuotes = (token) => token.replace(/^["']+|["']+$/g, '')
 
 const isRealEnv = (name) =>
-  name === '.env' || (name.startsWith('.env.') && !ENV_TEMPLATES.has(name))
+  name === '.env' ||
+  name.endsWith('.env') ||
+  (name.startsWith('.env.') && !ENV_TEMPLATES.has(name))
 
 export const ProtectToken = async () => ({
   'tool.execute.before': async (input, output) => {
@@ -86,7 +91,15 @@ export const ProtectToken = async () => ({
           .slice(reader.index + reader[0].length)
           .split(/[|;&]/)[0]
         for (const token of segment.split(/\s+/)) {
-          if (isRealEnv(basename(stripQuotes(token)))) deny(REASONS.envRead)
+          // A flag such as --file=.env carries the path after the equals sign.
+          const eq = token.indexOf('=')
+          const candidates =
+            eq === -1 ? [token] : [token, token.slice(eq + 1)]
+          for (const candidate of candidates) {
+            if (isRealEnv(basename(stripQuotes(candidate)))) {
+              deny(REASONS.envRead)
+            }
+          }
         }
       }
       return

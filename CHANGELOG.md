@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.10.2
+
+- Fix two over-deny cases in the opencode plugin and close one under-deny. The environment-dump rule now fires only where a command can start, so `cd env`, `ls env`, and `npm run env` are no longer denied; the trade-off is that `sudo env` and a subshell `` `env` `` are no longer denied either. The `.env` rule now covers any file whose name ends in `.env` (so `prod.env` is denied with the reader reason instead of the dump reason), and a flag value after an equals sign such as `--config-file=.env` is now inspected.
+
 ## 2.10.1
 
 - Harden the opencode plugin: a `bash` call whose `command` argument is missing and a `read` whose `filePath` argument is missing are now denied instead of silently allowed.

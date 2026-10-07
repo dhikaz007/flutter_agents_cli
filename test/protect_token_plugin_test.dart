@@ -162,6 +162,35 @@ try {
     );
   });
 
+  test('an env-named argument is not an environment dump', () async {
+    expect(
+        await reasonFor('bash', <String, Object?>{'command': 'cd env'}),
+        isNull);
+    expect(await reasonFor('bash', <String, Object?>{'command': 'ls env'}),
+        isNull);
+    expect(
+        await reasonFor('bash', <String, Object?>{'command': 'npm run env'}),
+        isNull);
+    expect(await reasonFor('bash', <String, Object?>{'command': 'sudo env'}),
+        isNull);
+  });
+
+  test('denies any .env-named file and .env paths carried by a flag',
+      () async {
+    expect(
+        await reasonFor('bash', <String, Object?>{'command': 'cat prod.env'}),
+        isNotNull);
+    expect(
+        await reasonFor(
+            'bash', <String, Object?>{'command': 'bat --config-file=.env'}),
+        isNotNull);
+    expect(
+      await reasonFor('bash',
+          <String, Object?>{'command': 'bat --config-file=.env.example'}),
+      isNull,
+    );
+  });
+
   test('a missing tool argument denies instead of failing open', () async {
     expect(await reasonFor('bash', <String, Object?>{}), isNotNull);
     expect(await reasonFor('read', <String, Object?>{}), isNotNull);

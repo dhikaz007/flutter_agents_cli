@@ -21,7 +21,15 @@ Future<void> runAgents(List<String> arguments) async {
     return;
   }
 
-  if (parsed['help'] == true || parsed.command == null) {
+  if (parsed['help'] == true) {
+    _usage();
+    return;
+  }
+  if (parsed.command == null) {
+    if (parsed.rest.isNotEmpty) {
+      _unknownCommand(parsed.rest.first, parser);
+      return;
+    }
     _usage();
     return;
   }
@@ -228,89 +236,224 @@ ArgParser _buildParser() {
 }
 
 void _usage() {
-  stdout.writeln('''flutter-agents $cliVersion
+  stdout.writeln('''
+flutter-agents $cliVersion
 
 Dynamic, project-aware AGENTS rule manager for Flutter.
 
 Core:
   agents init [--preset NAME|FILE] [--mode existing|new] [--adopt keep|import|merge|replace|cancel]
+      # install or refresh the rules: AGENTS.md, docs/rules, profiles
   agents detect
+      # report the detected stack without writing anything
   agents sync
-  agents doctor
+      # re-apply the rules after the stack or rules changed
+  agents doctor [--fix]
+      # check the installation for drift and repair it
   agents status
+      # show what is installed and which files drifted
   agents uninstall [--dry-run] [--force]
+      # remove everything this CLI manages; user-owned files stay
 
 Profiles:
   agents add <kind> <profile>
+      # switch one concern to a profile, e.g. state to riverpod
   agents remove <kind>
+      # drop a concern back to the CLI default
   agents explain <concern>
+      # show which rule files load for a concern
 
 Architecture:
   agents structure show
+      # print the detected feature and shared folder layout
   agents structure set <profile>
+      # record the architecture layout explicitly
 
-Presets:
+Style:
+  agents style audit
+      # audit widget code against the project style rules
+
+Presets (a preset is a saved set of stack choices):
   agents preset list
+      # list saved presets
   agents preset show <name>
+      # print one preset's full configuration
   agents preset create [name]
+      # start a new preset from the CLI defaults
   agents preset edit <name>
+      # open the preset file in \$EDITOR
   agents preset set <name> <kind> [value]
+      # set one stack choice in a preset
   agents preset set <name> rule <layer> [rule-name]
+      # pin a custom rule layer in a preset
   agents preset unset <name> <kind>
+      # clear a stack choice from a preset
   agents preset unset <name> rule <layer>
+      # clear a pinned rule layer
   agents preset save <name> [--force]
+      # persist the current preset
   agents preset delete <name>
+      # delete a saved preset
   agents preset export <file.yaml>
+      # copy the preset to a YAML file
   agents preset from-profile <name> <ruleset> <profile>
+      # build a preset from a ruleset profile
 
 Token/context:
   agents context "task description"
+      # preview the minimum rule context loaded for a task
 
 Discovery:
   agents learn [--write]
+      # scan the codebase for conventions worth writing down
 
 Custom rules:
   agents rule list [layer]
+      # list your rule documents per layer
   agents rule add <layer> <file.md> [name]
+      # register one of your rule documents
   agents rule remove <layer> <name>
+      # unregister a rule document
   agents rule default <layer> <name|default>
+      # mark a rule document as the layer default
   agents rule use <layer> <name|default>
+      # activate a rule document for a layer
   agents rule show <layer> [name]
+      # show the rule documents registered for a layer
 
-Dynamic rulesets:
+Dynamic rulesets (a ruleset is a shared rules repository):
   agents ruleset add <name> <git-url-or-local-path>
+      # register a rules repository
   agents ruleset list
+      # list registered rulesets
   agents ruleset use <name> <profile>
+      # activate a ruleset profile
   agents ruleset update <name>
+      # pull the latest rules for a ruleset
   agents ruleset profiles <name>
+      # list the profiles a ruleset ships
   agents ruleset map [--review]
+      # match project rule docs to concerns
   agents ruleset apply <name> <concern...>
+      # install rules for the named concerns
   agents ruleset link [--yes]
+      # bridge an existing AGENTS.md to this CLI
   agents ruleset validate <name>
+      # check a ruleset's shape
   agents ruleset diff <name>
+      # compare installed rules against the ruleset
   agents ruleset status <name>
-  agents ruleset lock
-  agents ruleset verify
-  agents ruleset restore
+      # show what a ruleset has installed here
+  agents ruleset lock | verify | restore
+      # pin, verify, and restore locked rules
   agents ruleset audit
-  agents ruleset upgrade-plan
-  agents ruleset recommend [name]
+      # check installed rules for drift and staleness
+  agents ruleset upgrade-plan | recommend [name]
+      # plan an upgrade or get a ruleset recommendation
 
 Dependencies:
   agents dependency plan
+      # preview pubspec changes without applying them
   agents dependency add [package ...] [--yes]
+      # add packages with the CLI's safety checks
   agents dependency remove <package> [--force] [--yes]
+      # remove packages
 
 Migration planning:
   agents migrate modular <v5|v6|v7> <v5|v6|v7> --dry-run [--output report.md]
+      # plan a modular architecture migration
   agents migrate structure <from-profile> <to-profile> --dry-run [--output report.md]
+      # plan a folder layout migration
 
 Other:
   agents version
+      # print the CLI version
 
 Profile kinds:
-  architecture, state, routing, di, network, storage, localization,
-  assets, codegen, json-codegen, loading-blocking, loading-list, loading-inline, pagination
+  architecture       # how feature code is laid out (folders, layers)
+  state              # state management: bloc, riverpod, provider
+  routing            # navigation: go_router, navigator 2, auto_route
+  di                 # dependency injection: get_it, injectable
+  network            # HTTP client: dio, http, chopper
+  storage            # persistence: hive, isar, sqflite, cloud_firestore
+  localization       # i18n: flutter_l10n, easy_localization, slang
+  assets             # asset generation: flutter_gen
+  codegen            # model codegen: freezed, dart_mappable
+  json-codegen       # JSON serialization: json_serializable
+  loading-blocking   # full-screen loader for blocking waits
+  loading-list       # list placeholders: skeletonizer, shimmer
+  loading-inline     # inline spinners for buttons and rows
+  pagination         # paging: infinite scroll, page-based
 
-Use `agents context` to preview the minimum rule context for a coding task.''');
+Use `agents context` to preview the minimum rule context for a coding task.
+''');
+}
+
+// Suggestions walk every command path in the parser, so a bare subcommand name
+// such as `show` still finds `preset show` and `rule show`.
+void _unknownCommand(String input, ArgParser parser) {
+  stderr.writeln('Unknown command: $input');
+  final paths = <String>[];
+  void walk(ArgParser node, String prefix) {
+    for (final entry in node.commands.entries) {
+      final path = prefix.isEmpty ? entry.key : '$prefix ${entry.key}';
+      paths.add(path);
+      walk(entry.value, path);
+    }
+  }
+
+  walk(parser, '');
+  final scored = <MapEntry<String, int>>[];
+  for (final path in paths) {
+    var score = 99;
+    for (final segment in path.split(' ')) {
+      if (segment == input) {
+        score = 0;
+        break;
+      }
+      if (segment.startsWith(input)) {
+        if (score > 1) score = 1;
+        continue;
+      }
+      final distance = _levenshtein(segment, input);
+      if (distance < score) score = distance;
+    }
+    if (score <= 2) scored.add(MapEntry(path, score));
+  }
+  scored.sort((a, b) => a.value.compareTo(b.value));
+  final suggestions =
+      scored.take(5).map((entry) => '  agents ${entry.key}').toList();
+  if (suggestions.isEmpty) {
+    stderr.writeln("Run 'flutter-agents --help' to see every command.");
+  } else {
+    stderr.writeln('Did you mean:');
+    for (final suggestion in suggestions) {
+      stderr.writeln(suggestion);
+    }
+  }
+  exitCode = 64;
+}
+
+int _levenshtein(String a, String b) {
+  if (a == b) return 0;
+  if (a.isEmpty) return b.length;
+  if (b.isEmpty) return a.length;
+  var previous = List<int>.generate(b.length + 1, (i) => i);
+  var current = List<int>.filled(b.length + 1, 0);
+  for (var i = 0; i < a.length; i++) {
+    current[0] = i + 1;
+    for (var j = 0; j < b.length; j++) {
+      final cost = a[i] == b[j] ? 0 : 1;
+      final deletion = current[j] + 1;
+      final insertion = previous[j + 1] + 1;
+      final substitution = previous[j] + cost;
+      current[j + 1] = deletion < insertion
+          ? deletion
+          : (insertion < substitution ? insertion : substitution);
+    }
+    for (var j = 0; j <= b.length; j++) {
+      previous[j] = current[j];
+    }
+  }
+  return previous[b.length];
 }

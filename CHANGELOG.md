@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.13.0
+
+- Make the console answer mistakes instead of dumping the full usage: an unknown command now prints `Unknown command: X` plus the closest command paths - including subcommands, so `agents show` suggests `agents preset show` and `agents rule show` - and exits 64.
+- Describe every command and every profile kind in the usage, so a first-time user can read what `agents add` or `loading-inline` actually means instead of guessing from the syntax. Document `agents style audit`, which existed in the parser but was never listed. Escape `$EDITOR` in the usage text, which the analyzer had started rejecting.
+
 ## 2.12.1
 
 - Retire the empty `tool/hooks/` folder that the 2.10.0 hook removal left behind on legacy projects. The empty-folder sweep now covers `tool/hooks` and `tool`, so `agents init` and `agents sync` remove the retired folder once it holds nothing, and a folder with user hooks inside is never touched. `agents uninstall` performs the same sweep after removing manifest files. `docs/project/` files were never uninstallable, not even with `--force` - they are not tracked by the manifest - and a test now pins that.

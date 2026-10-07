@@ -1,4 +1,4 @@
-# flutter-agents CLI v2.12.1
+# flutter-agents CLI v2.13.0
 
 [![CI](https://github.com/dhikaz007/flutter_agents_cli/actions/workflows/ci.yml/badge.svg)](https://github.com/dhikaz007/flutter_agents_cli/actions/workflows/ci.yml)
 [![Release](https://github.com/dhikaz007/flutter_agents_cli/actions/workflows/release.yml/badge.svg)](https://github.com/dhikaz007/flutter_agents_cli/actions/workflows/release.yml)
@@ -36,6 +36,8 @@ cd /path/to/your/flutter_project
 agents init
 ```
 
+Run it once from anywhere: `dart pub global activate --source path <path-to-this-repo>` (with `~/.pub-cache/bin` on your PATH). Running through `dart run` instead re-resolves packages and rebuilds on every call - that is the `pub get` you see, not the CLI itself.
+
 What lands in the project:
 
 ```text
@@ -46,7 +48,7 @@ docs/rules/*.md                 # rule documents
 docs/profiles/<kind>/<name>.md  # the profile chosen per concern
 docs/project/PROJECT-RULES.md   # yours to edit, never overwritten
 .agents-manifest                # CLI bookkeeping, used by sync and doctor
-.claude/settings.json           # wires the secret-handling hook (Claude Code)
+.opencode/plugins/protect-token.js  # secret warning tripwire (opencode)
 ```
 
 Check the result:

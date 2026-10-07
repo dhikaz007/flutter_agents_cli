@@ -36,6 +36,55 @@ void main() {
       expect(result.exitCode, 0);
       expect(result.stdout, contains('flutter-agents'));
     });
+
+    test('an unknown command suggests the closest matches', () {
+      final result = runCli(['show']);
+
+      expect(result.exitCode, 64);
+      expect(result.stderr, contains('Unknown command: show'));
+      expect(result.stderr, contains('agents preset show'));
+      expect(result.stderr, contains('agents rule show'));
+    });
+
+    test('every top-level command is documented in the usage', () {
+      final result = runCli(['--help']);
+
+      expect(result.exitCode, 0);
+      for (final command in <String>[
+        'init',
+        'detect',
+        'sync',
+        'doctor',
+        'status',
+        'uninstall',
+        'add',
+        'remove',
+        'explain',
+        'context',
+        'learn',
+        'version',
+        'style',
+        'preset',
+        'structure',
+        'rule',
+        'ruleset',
+        'dependency',
+        'migrate',
+      ]) {
+        expect(
+          result.stdout,
+          contains('agents $command'),
+          reason: 'usage should document `agents $command`',
+        );
+      }
+    });
+
+    test('usage explains each profile kind', () {
+      final result = runCli(['--help']);
+
+      expect(result.stdout, contains('state              # state management'));
+      expect(result.stdout, contains('loading-inline     # inline spinners'));
+    });
   });
 
   group('command tree', () {

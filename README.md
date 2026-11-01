@@ -42,10 +42,14 @@ What lands in the project:
 
 ```text
 AGENTS.md                       # the agent entrypoint
+PROJECT_PROFILE.md              # the one selected profile
 docs/PROJECT-STACK.md           # detected stack, single source of truth
 docs/RULES-MAP.md               # which rule is active per concern
-docs/rules/*.md                 # rule documents
-docs/profiles/<kind>/<name>.md  # the profile chosen per concern
+docs/dynamic-rules/rules/*.md   # the nine universal rules
+docs/dynamic-rules/profiles/<profile>/   # ARCHITECTURE, ROUTING,
+                                 # DEPENDENCY-INJECTION, FOLDER-STRUCTURE
+docs/dynamic-rules/PROJECT-CONVENTIONS.md  # observed paths and symbols,
+                                 # created once, then never rescanned
 docs/project/PROJECT-RULES.md   # yours to edit, never overwritten
 .agents-manifest                # CLI bookkeeping, used by sync and doctor
 .opencode/plugins/protect-token.js  # secret warning tripwire (opencode)
@@ -79,9 +83,13 @@ Three flags worth knowing on a first run:
 | --- | --- |
 | `--yes` | accept detection instead of prompting; for CI and scripting |
 | `--mode new` | treat the directory as a new project and pick a stack deliberately |
-| `--preset <name>` | start from a built-in preset, for example `cubit-clean` |
+| `--preset <name>` | start from a built-in preset, for example `flutter_modular_v6` |
 
-After that the agent reads `AGENTS.md` on its own. To add stack rules from an external ruleset, see [Dynamic rulesets](#dynamic-rulesets-v16).
+After that the agent reads `AGENTS.md` on its own. The nine universal rules and
+the selected profile's four documents ship inside the package, so a first run
+needs no network. `--rule-source template` opts out: it installs the rules under
+`docs/rules/` and no profile documents. For an external ruleset, see
+[Dynamic rulesets](#dynamic-rulesets-v16).
 
 ## Release
 
@@ -123,51 +131,52 @@ agents init --mode new
 Or use a preset:
 
 ```bash
-agents init --preset cubit-clean --yes
+agents init --preset flutter_modular_v6 --yes
 ```
 
-Built-in presets:
+Built-in presets — one per profile, and the preset name is the profile name:
 
 ```text
-cubit-clean
-modular-cubit
-riverpod-clean
+go_router_get_it
+flutter_modular_v5
+flutter_modular_v6
+flutter_modular_v7
 ```
 
 Inspect them:
 
 ```bash
 agents preset list
-agents preset show cubit-clean
+agents preset show flutter_modular_v6
 ```
 
 Presets are optional. A user preset may be **partial**: it only controls the fields you choose. Create one interactively:
 
 ```bash
-agents preset create dhikaz-cubit-clean
+agents preset create dhikaz-my-stack
 ```
 
 During creation, skip any profile/rule you do not want to decide yet. The preset is saved immediately and can be continued later:
 
 ```bash
-agents preset edit dhikaz-cubit-clean
+agents preset edit dhikaz-my-stack
 ```
 
 Granular updates are also available:
 
 ```bash
-agents preset set dhikaz-cubit-clean network dio
-agents preset set dhikaz-cubit-clean state flutter_bloc
-agents preset set dhikaz-cubit-clean rule state state-management
+agents preset set dhikaz-my-stack network dio
+agents preset set dhikaz-my-stack state flutter_bloc
+agents preset set dhikaz-my-stack rule state state-management
 
-agents preset unset dhikaz-cubit-clean state
-agents preset unset dhikaz-cubit-clean rule state
+agents preset unset dhikaz-my-stack state
+agents preset unset dhikaz-my-stack rule state
 ```
 
 A partial preset might intentionally contain only:
 
 ```yaml
-name: dhikaz-cubit-clean
+name: dhikaz-my-stack
 network: dio
 rules:
   network: "my-network"
@@ -178,20 +187,20 @@ Later you can add state management without recreating the preset.
 Or save the configuration of the current initialized project:
 
 ```bash
-agents preset save dhikaz-cubit-clean
+agents preset save dhikaz-my-stack
 ```
 
 User presets are stored globally in `~/.flutter-agents/presets/`, so they can be reused by other projects:
 
 ```bash
 agents preset list
-agents preset show dhikaz-cubit-clean
-agents init --preset dhikaz-cubit-clean
+agents preset show dhikaz-my-stack
+agents init --preset dhikaz-my-stack
 ```
 
 When a user preset is partial, `agents init --preset ...` applies only the fields present in the YAML. Other fields keep detected/project values and can still be confirmed interactively.
 
-A preset preserves custom rule choices too, for example `rules.state: state-management` in the generated YAML. Delete a user preset with `agents preset delete dhikaz-cubit-clean`.
+A preset preserves custom rule choices too, for example `rules.state: state-management` in the generated YAML. Delete a user preset with `agents preset delete dhikaz-my-stack`.
 
 You can still export the current project stack to any YAML path:
 
@@ -320,7 +329,6 @@ Example:
 ```text
 Concern: state
 Active profile: flutter_bloc
-Rule file: docs/profiles/state/flutter_bloc.md
 Expected package: flutter_bloc
 Key policy: business state in Cubit/Bloc; one-time UI side effects in BlocListener/BlocConsumer.listener.
 ```
@@ -340,7 +348,7 @@ Concerns: ui
 
 Recommended context:
   AGENTS.md
-  docs/rules/UI.md
+  docs/dynamic-rules/rules/UI.md
 
 Estimated rule context: ~... tokens
 ```
@@ -353,23 +361,7 @@ agents context "integrasikan API delete account"
 
 The classifier is operation-aware. It treats a visual-only change such as `ubah warna button login` as UI work, not authentication work. Security is loaded only for explicit credentials/tokens, authentication or authorization flows, password rules, secure storage, or destructive/sensitive operations.
 
-A framework error loads its own rule instead of the general UI rule:
-
-```bash
-agents context "perbaiki RenderFlex overflow di header"
-```
-
-```text
-Concerns: errors
-
-Recommended context:
-  AGENTS.md
-  docs/rules/ERRORS.md
-
-Estimated rule context: ~... tokens
-```
-
-The same split applies to the other added concerns. `jank`/`lambat` loads `PERFORMANCE.md`, `semantics`/`kontras` loads `ACCESSIBILITY.md`, and `sealed`/`pattern matching` loads `DART3.md` — a Dart 3 state request loads `DART3.md` together with the active state profile, because the sealed hierarchy belongs to whichever state package the project selected.
+Framework errors, performance, accessibility, and Dart 3 shape questions have no dedicated rule file: they fall back to the nearest comparable implementation and the relevant universal rule.
 
 `AGENTS.md` is a stable context router with three layers:
 
@@ -420,41 +412,37 @@ A typical project after init:
 ```text
 project/
 ├── AGENTS.md
+├── PROJECT_PROFILE.md            # profile: <one of the four>
 ├── .agents-manifest
 └── docs/
     ├── PROJECT-STACK.md
+    ├── RULES-MAP.md
     ├── ARCHITECTURE-ESSENTIAL.md
     ├── project/
-    │   └── PROJECT-RULES.md        # user-owned
-    ├── rules/
-    │   ├── UI.md
-    │   ├── SECURITY.md
-    │   ├── TESTING.md
-    │   ├── CODEGEN.md
-    │   ├── COMMIT.md
-    │   ├── STYLE.md
-    │   ├── WORKFLOW.md
-    │   ├── PERFORMANCE.md
-    │   ├── ACCESSIBILITY.md
-    │   ├── ERRORS.md
-    │   ├── DART3.md
-│   ├── FIREBASE.md          # router; per-service detail lives in references/
-     │   └── references/
-     │       ├── firebase-setup.md
-     │       ├── firebase-firestore.md
-     │       ├── firebase-auth.md
-     │       └── firebase-observability.md
-    └── profiles/
-        ├── architecture/<active>.md
-        ├── state/<active>.md
-        ├── routing/<active>.md
-        ├── di/<active>.md
-        ├── network/<active>.md
-        └── ... only selected profiles
+    │   └── PROJECT-RULES.md      # user-owned
+    └── dynamic-rules/
+        ├── PROJECT-CONVENTIONS.md  # observed paths and symbols, created once
+        ├── rules/                  # the nine universal rules
+        │   ├── CORE.md
+        │   ├── UI.md
+        │   ├── STATE-MANAGEMENT.md
+        │   ├── NETWORK.md
+        │   ├── SECURITY.md
+        │   ├── TESTING.md
+        │   ├── CODEGEN.md
+        │   ├── ENVIRONMENT.md
+        │   └── WORKFLOW.md
+        └── profiles/<selected>/    # exactly one profile
+            ├── ARCHITECTURE.md
+            ├── ROUTING.md
+            ├── DEPENDENCY-INJECTION.md
+            └── FOLDER-STRUCTURE.md
 ```
 
-Unused profiles are not copied into the project.
-Only the active profile for each concern is installed during init/sync in template mode, so `agents doctor` can verify every profile the stack selects. Dynamic ruleset projects keep every profile under `docs/dynamic-rules/` instead.
+One profile per project: only the selected profile's four documents are
+installed, so `agents doctor` can verify them. There is no `docs/profiles/`
+tree. `--rule-source template` is the exception: it installs the nine rules
+under `docs/rules/` and no profile documents.
 
 ## Source-of-truth model
 
@@ -528,21 +516,17 @@ Assets/codegen/loading/pagination:
 - shimmer
 - infinite_scroll_pagination
 
-Model codegen and JSON codegen are separate choices and are installed side by side under `docs/profiles/codegen/`. Freezed covers union-state and copy generation; json_serializable covers API request/response models. Neither replaces the other, and a generation task loads whichever of the two the project selected.
+Model codegen and JSON codegen are separate stack choices, both recorded in the manifest: Freezed covers union-state and copy generation; json_serializable covers API request/response models. Neither replaces the other, and a generation task follows whichever the project selected.
 
 Unsupported packages are not automatically replaced. Existing code remains authoritative; add a custom project rule when necessary.
 
 ## Secret handling hook
 
-Generated projects receive `.opencode/plugins/protect-token.js`, an opencode plugin that watches every Bash call and every `read`, `write`, and `edit` of a secrets file. When a call prints a secret, dumps the environment, uses `curl -v`, passes a secret on the command line, in a request body, or in a URL, greps or network-copies a secrets file, or touches credentials and keys, the plugin warns and lets the call proceed - it never blocks. For `bash` the warning is printed above the tool output, where the model reads it; for the file tools it goes to the opencode log for you. `docs/rules/SECURITY.md` remains the rule; the plugin is only a tripwire so a leak-prone command never passes silently. Reporting a secret's length (`echo ${#GITHUB_TOKEN}`), passing a token as an `Authorization` header, reading a committed `.env.example`, and Firebase web API keys in URLs stay clean. A recursive search over a directory and an interpreter such as `python3 -c` still reach a secrets file by design - this is not a sandbox.
-
-## Progressive loading
-
-A rule file may stay small and always-loaded while the detail it points to is read on demand. `docs/rules/references/` is that folder: `FIREBASE.md` states the cross-cutting invariants and names the reference file for the service being changed. Reference files are skipped by the rule mapper, so one never competes with a rule file for a concern.
+Generated projects receive `.opencode/plugins/protect-token.js`, an opencode plugin that watches every Bash call and every `read`, `write`, and `edit` of a secrets file. When a call prints a secret, dumps the environment, uses `curl -v`, passes a secret on the command line, in a request body, or in a URL, greps or network-copies a secrets file, or touches credentials and keys, the plugin warns and lets the call proceed - it never blocks. For `bash` the warning is printed above the tool output, where the model reads it; for the file tools it goes to the opencode log for you. The security rule lives in the active ruleset (`docs/dynamic-rules/rules/SECURITY.md`); the plugin is only a tripwire so a leak-prone command never passes silently. Reporting a secret's length (`echo ${#GITHUB_TOKEN}`), passing a token as an `Authorization` header, reading a committed `.env.example`, and Firebase web API keys in URLs stay clean. A recursive search over a directory and an interpreter such as `python3 -c` still reach a secrets file by design - this is not a sandbox.
 
 ## Rule documents vs profile kinds
 
-Two vocabularies exist on purpose and are not merged. `docs/rules/` documents and the keys in `RuleMapper` name *rule documents* (`state-management`, `dependency-injection`), matching the stem a human writes on a project rule file. Profile kinds name the *slots the CLI fills* (`state`, `di`), matching `agents profile set <kind> <value>`.
+Two vocabularies exist on purpose and are not merged. Rule documents (under `docs/dynamic-rules/rules/`, or `docs/rules/` for project-owned files) and the keys in `RuleMapper` name *rule documents* (`state-management`, `dependency-injection`), matching the stem a human writes on a project rule file. Profile kinds name the *slots the CLI fills* (`state`, `di`), matching `agents profile set <kind> <value>`.
 
 Renaming one to match the other would break `matchesDynamicConcern`, which compares rule-document keys against concern names declared by external ruleset repositories. Nothing collides in practice because the rule mapper skips `docs/custom-rules/`, where a kind-named file would otherwise land.
 
@@ -581,17 +565,13 @@ Format `[<ACTION>]: <subject>`, subject at most 72 characters, with no period at
 
 Body is optional and at most 3 lines. It answers why, never what. Do not restate the changed-file list and do not cite how many tests passed. If the diff already reads clearly on its own, write the subject alone.
 
-Generated projects receive the same rule as `docs/rules/COMMIT.md`, loaded only when a task mentions committing.
-
-Generated projects also receive `docs/rules/STYLE.md` for class/constant/helper/extension naming and widget structure, loaded only for naming or extraction tasks. The `flutter_bloc`, `go_router`, and `flutter_modular` profiles require a single bootstrap observer (`AppBlocObserver` / route observer) for logging.
-
-`docs/rules/UI.md` requires `GestureDetector` with `HitTestBehavior.translucent` instead of `InkWell` for custom tap handling, because `InkWell` needs a `Material` ancestor and its splash stays invisible over transparent or non-`Material` surfaces. Widgets that already accept a callback use it directly, so `ListTile(onTap: ...)` is never wrapped in another tap widget.
-
-Four more rules cover concerns the base rules did not mention. `docs/rules/PERFORMANCE.md` is loaded for a reported or measured performance problem and covers `const` subtrees, `ListView.builder` over long lists, stable keys, image `cacheWidth`, `RepaintBoundary`, and `compute`. `docs/rules/ACCESSIBILITY.md` is loaded for semantics, screen readers, contrast, tap targets, text scaling, and inclusive design. `docs/rules/ERRORS.md` maps each common Flutter framework failure to its cause and fix, such as `RenderFlex overflowed`, `Vertical viewport was given unbounded height`, `RenderBox was not laid out`, and `setState() called during build`. `docs/rules/DART3.md` covers sealed state hierarchies, records, pattern matching, and exhaustive switches for new Dart 3 code.
-
-`docs/rules/TESTING.md` now also requires `group()` named after the class under test, "should" naming for each case, a fresh subject per test, an injected clock or id source, and the check "can this test fail if the real code is broken?" before a test is kept. It also fixes the mocking boundary, requires `registerFallbackValue` before stubbing a custom type with `mocktail`, and requires a level-based decision before reaching for an end-to-end test.
-
-`docs/rules/FIREBASE.md` covers the cross-cutting invariants — App Check before a release build, security rules as the only authorization boundary, deny-by-default rules that validate fields and not just paths, no admin keys in the app, composite indexes, and the Emulator. Its per-service detail lives in `docs/rules/references/firebase-{setup,firestore,auth,observability}.md`, which the agent reads only for the service being changed. `firebase-setup.md` covers project wiring: the FlutterFire CLI run, the generated `firebase_options.dart` and platform config files, per-plugin platform minimums, Emulator setup, and one Firebase project per release-status flavor with the per-variant config placement each platform needs. `firebase-auth.md`, `firebase-firestore.md`, and `firebase-observability.md` install only when `pubspec.yaml` depends on Firebase and retire when the dependency leaves - `firebase-setup.md` always installs because it is what walks an agent through adding Firebase to a fresh project, and every apply re-reads pubspec, so `agents sync` is the only step needed after adopting or dropping Firebase. This is the progressive-loading convention: a rule file may stay small and always-loaded while the detail it points to is read on demand. `docs/rules/references/` is skipped by the rule mapper, so a reference file never becomes an active concern source.
+Generated projects receive the nine universal rules, and the router loads each
+one only for the concern it names. There is no separate `COMMIT.md`, `STYLE.md`,
+`PERFORMANCE.md`, `ACCESSIBILITY.md`, `ERRORS.md`, `DART3.md`, or `FIREBASE.md`
+any more: naming, layout-error, performance, and accessibility questions fall
+back to the nearest comparable implementation plus `UI.md`/`CORE.md`, and
+commit messages follow the format above. Firebase projects rely on their own
+setup and the `SECURITY.md` and `NETWORK.md` rules.
 
 Run before release:
 
@@ -689,9 +669,9 @@ writing the map:
 
 `agents init` is scan-first for existing projects: it detects the stack and
 maps existing rules without repeating the full configuration questionnaire.
-For an empty project, selecting Dynamic Rules automatically downloads the
-official `vibe_coding_rules_dynamic` repository and caches it locally. A custom
-ruleset can still be added with `agents ruleset add`.
+For an empty project, selecting Dynamic Rules seeds the copy of
+`vibe_coding_rules_dynamic` bundled inside the CLI package, so no download
+runs. A custom external ruleset can still be added with `agents ruleset add`.
 
 The CLI does not generate `docs/profiles/`. For a new project, stack-specific
 rules live under the selected Dynamic Rules profile in `docs/dynamic-rules/`.

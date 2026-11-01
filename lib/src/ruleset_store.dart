@@ -79,6 +79,72 @@ class RulesetStore {
     }
   }
 
+  /// Marker file present only in a cache directory seeded from the CLI's own
+  /// bundled ruleset. A bundled cache has no `.git`, so every git-backed
+  /// operation has to branch on this first.
+  static const String bundledMarker = '.bundled';
+
+  bool isBundled(Directory dir) =>
+      File(p.join(dir.path, bundledMarker)).existsSync();
+
+  /// Revision recorded at seed time for a bundled ruleset. It never changes,
+  /// which is what a lock comparison needs: the CLI package version pins it.
+  String bundledRevision(Directory dir) =>
+      File(p.join(dir.path, bundledMarker)).readAsStringSync().trim();
+
+  /// Copies a bundled ruleset into the cache without touching git.
+  ///
+  /// The cache keeps every reader (`resolve`, `validate`, `profiles`,
+  /// `metadata`) unchanged: they already work on [directory]. The marker file
+  /// records the source revision for lock and status display.
+  Future<void> seed(String name, Directory source,
+      {String revision = 'bundled'}) async {
+    final target = directory(name);
+    if (target.existsSync()) throw StateError('Ruleset already exists: $name');
+    if (!source.existsSync()) {
+      throw ArgumentError('Bundled ruleset not found: ${source.path}');
+    }
+    target.createSync(recursive: true);
+    for (final entity in source.listSync(recursive: true, followLinks: false)) {
+      final rel = p.relative(entity.path, from: source.path);
+      if (entity is Directory) {
+        Directory(p.join(target.path, rel)).createSync(recursive: true);
+      } else if (entity is File) {
+        final dest = File(p.join(target.path, rel));
+        dest.parent.createSync(recursive: true);
+        dest.writeAsBytesSync(entity.readAsBytesSync());
+      }
+      // Symlinks and anything else in the bundle are skipped: a ruleset the
+      // generator reads must be plain files.
+    }
+    File(p.join(target.path, bundledMarker)).writeAsStringSync('$revision\n');
+  }
+
+  /// Seeds `templates/rulesets/<name>` from the CLI package into the cache
+  /// when no copy exists yet. Returns false when the package ships no bundle
+  /// for [name]; an already cached ruleset counts as ready.
+  Future<bool> tryEnsureBundled(
+    String name,
+    Directory packageTemplates,
+  ) async {
+    if (list().contains(name)) return true;
+    final bundle = Directory(p.join(packageTemplates.path, 'rulesets', name));
+    if (!bundle.existsSync()) return false;
+    await seed(name, bundle, revision: _sourceRevision(bundle));
+    return true;
+  }
+
+  /// Source revision a bundle was copied from, recorded in its README. The
+  /// value only moves when the CLI package ships a newer snapshot, which is
+  /// what a lock comparison needs.
+  String _sourceRevision(Directory bundle) {
+    final readme = File(p.join(bundle.path, 'README.md'));
+    if (!readme.existsSync()) return 'bundled';
+    final match = RegExp(r'Source commit: ([0-9a-f]{7,40})')
+        .firstMatch(readme.readAsStringSync());
+    return match?.group(1) ?? 'bundled';
+  }
+
   Directory resolve(String name, String profile) {
     final dir = directory(name);
     final profileDir = Directory(p.join(dir.path, 'profiles', profile));
@@ -91,6 +157,11 @@ class RulesetStore {
   Future<void> update(String name) async {
     final target = directory(name);
     if (!target.existsSync()) throw ArgumentError('Ruleset not found: $name');
+    if (isBundled(target)) {
+      throw StateError(
+          'Ruleset $name ships inside the CLI package. Update the CLI '
+          'package instead of pulling.');
+    }
     final branch = await _defaultBranch(target);
     final checkout = await Process.run('git', <String>['checkout', branch],
         workingDirectory: target.path);
@@ -106,6 +177,7 @@ class RulesetStore {
   Future<String> revision(String name, {bool short = true}) async {
     final target = directory(name);
     if (!target.existsSync()) throw ArgumentError('Ruleset not found: $name');
+    if (isBundled(target)) return bundledRevision(target);
     final result = await Process.run(
         'git', <String>['rev-parse', if (short) '--short', 'HEAD'],
         workingDirectory: target.path);
@@ -117,6 +189,11 @@ class RulesetStore {
   Future<void> restore(String name, String revision) async {
     final target = directory(name);
     if (!target.existsSync()) throw ArgumentError('Ruleset not found: $name');
+    if (isBundled(target)) {
+      throw StateError(
+          'Ruleset $name ships inside the CLI package and has no history to '
+          'restore. Update the CLI package instead.');
+    }
     final local = await Process.run(
       'git',
       <String>['rev-parse', '--verify', '$revision^{commit}'],
@@ -147,6 +224,11 @@ class RulesetStore {
   Future<RulesetDiff> diff(String name) async {
     final target = directory(name);
     if (!target.existsSync()) throw ArgumentError('Ruleset not found: $name');
+    if (isBundled(target)) {
+      throw StateError(
+          'Ruleset $name has no remote to compare. Its revision comes from '
+          'the CLI package.');
+    }
     final remote = await Process.run(
       'git',
       <String>['remote', 'get-url', 'origin'],

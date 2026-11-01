@@ -139,7 +139,6 @@ void runExplain(Directory root, ArgResults command) {
     return;
   }
   stdout.writeln('Active profile: $value');
-  stdout.writeln('Rule file: ${ProfileRegistry.profilePath(concern, value)}');
   final packageExpression = ProfileRegistry.packageFor(concern, value);
   if (packageExpression != null)
     stdout.writeln('Expected package: $packageExpression');

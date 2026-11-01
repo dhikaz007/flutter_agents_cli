@@ -34,6 +34,13 @@ Future<void> runRuleset(Directory root, ArgResults command) async {
         throw ArgumentError('Usage: agents ruleset use <name> <profile>');
       final manifest = ManifestStore().load(root);
       if (manifest == null) throw StateError('Run `agents init` first.');
+      await store.tryEnsureBundled(
+          args[0], await RuleGenerator().templateRoot());
+      final available = store.profiles(args[0]);
+      if (!available.contains(args[1])) {
+        throw StateError('Profile not found: ${args[1]}. Available: '
+            '${available.isEmpty ? 'none (add the ruleset with `agents ruleset add`)' : available.join(', ')}');
+      }
       store.resolve(args[0], args[1]);
       final config = manifest.config.copy()
         ..ruleset = args[0]
@@ -60,8 +67,14 @@ Future<void> runRuleset(Directory root, ArgResults command) async {
     case 'profiles':
       if (args.length != 1)
         throw ArgumentError('Usage: agents ruleset profiles <name>');
-      for (final profile in store.profiles(args.single))
-        stdout.writeln(profile);
+      await store.tryEnsureBundled(
+          args.single, await RuleGenerator().templateRoot());
+      final profiles = store.profiles(args.single);
+      if (profiles.isEmpty) {
+        throw StateError(
+            'Ruleset not found: ${args.single}. Add it with `agents ruleset add`.');
+      }
+      for (final profile in profiles) stdout.writeln(profile);
       return;
     case 'map':
       if (args.isNotEmpty)

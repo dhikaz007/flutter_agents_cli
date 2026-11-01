@@ -40,22 +40,6 @@ class ProfileRegistry {
     'pagination': <String>['infinite_scroll_pagination'],
   };
 
-  /// Folder holding a kind's profiles. The loading roles and the two codegen
-  /// roles share one folder each.
-  static String folderForKind(String kind) {
-    if (kind.startsWith('loading-')) return 'loading';
-    if (kind == 'json-codegen') return 'codegen';
-    return kind;
-  }
-
-  /// Every `docs/profiles/` folder [options] can install. Derived, not
-  /// hand-kept, so a new kind is cleaned up without a second edit.
-  static List<String> get profileFolders =>
-      <String>{for (final kind in options.keys) folderForKind(kind)}.toList();
-
-  static String profilePath(String kind, String name) =>
-      'docs/profiles/${folderForKind(kind)}/$name.md';
-
   static bool supports(String kind, String name) =>
       options[kind]?.contains(name) ?? false;
 
@@ -135,7 +119,7 @@ class ProfileRegistry {
 class PresetCatalog {
   static final Map<String, StackConfig Function()> _presets =
       <String, StackConfig Function()>{
-    'cubit-clean': () => StackConfig(
+    'go_router_get_it': () => StackConfig(
           mode: 'new',
           architecture: 'feature_first_pragmatic_clean',
           featureRoot: 'lib/feature',
@@ -154,7 +138,7 @@ class PresetCatalog {
           inlineLoader: 'shimmer',
           pagination: 'infinite_scroll_pagination',
         ),
-    'modular-cubit': () => StackConfig(
+    'flutter_modular_v5': () => StackConfig(
           mode: 'new',
           architecture: 'modular_feature',
           featureRoot: 'lib/feature',
@@ -173,21 +157,42 @@ class PresetCatalog {
           inlineLoader: 'shimmer',
           pagination: 'infinite_scroll_pagination',
         ),
-    'riverpod-clean': () => StackConfig(
+    'flutter_modular_v6': () => StackConfig(
           mode: 'new',
-          architecture: 'feature_first_pragmatic_clean',
+          architecture: 'modular_feature',
           featureRoot: 'lib/feature',
           sharedRoot: 'lib/core',
-          state: 'flutter_riverpod',
-          routing: 'go_router',
-          di: 'manual',
+          state: 'flutter_bloc',
+          routing: 'flutter_modular',
+          di: 'flutter_modular',
           network: 'dio',
           storage: 'hive_ce',
-          localization: 'intl',
+          localization: 'easy_localization',
           assets: 'flutter_gen',
           modelCodegen: 'freezed',
           jsonCodegen: 'json_serializable',
+          blockingLoader: 'loader_overlay',
           listLoader: 'skeletonizer',
+          inlineLoader: 'shimmer',
+          pagination: 'infinite_scroll_pagination',
+        ),
+    'flutter_modular_v7': () => StackConfig(
+          mode: 'new',
+          architecture: 'modular_feature',
+          featureRoot: 'lib/feature',
+          sharedRoot: 'lib/core',
+          state: 'flutter_bloc',
+          routing: 'flutter_modular',
+          di: 'flutter_modular',
+          network: 'dio',
+          storage: 'hive_ce',
+          localization: 'easy_localization',
+          assets: 'flutter_gen',
+          modelCodegen: 'freezed',
+          jsonCodegen: 'json_serializable',
+          blockingLoader: 'loader_overlay',
+          listLoader: 'skeletonizer',
+          inlineLoader: 'shimmer',
           pagination: 'infinite_scroll_pagination',
         ),
   };

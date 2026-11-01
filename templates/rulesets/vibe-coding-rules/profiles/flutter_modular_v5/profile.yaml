@@ -1,0 +1,7 @@
+architecture: modular_feature
+routing: flutter_modular
+di: flutter_modular
+dependencies:
+  flutter_modular: ^5.0.3
+sdk_constraints:
+  dart: project-verified

@@ -23,7 +23,8 @@ ProcessResult runCli(
       stderrEncoding: utf8,
     );
 
-Directory freshProject() => Directory.systemTemp.createTempSync('agents-layer-');
+Directory freshProject() =>
+    Directory.systemTemp.createTempSync('agents-layer-');
 
 Directory freshHome() => Directory.systemTemp.createTempSync('agents-home-');
 

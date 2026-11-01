@@ -245,12 +245,9 @@ const List<(String, List<(String, String)>)> _usageGroups = [
     [
       (
         'agents init [--preset NAME|FILE]',
-        'install or refresh the rules: AGENTS.md, docs/rules, profiles. Re-running is safe: files you edited are preserved and reported, not overwritten.'
+        'install or refresh the rules: AGENTS.md, PROJECT_PROFILE.md, and docs/dynamic-rules (nine universal rules plus the selected profile). Re-running is safe: files you edited are preserved and reported, not overwritten.'
       ),
-      (
-        'agents detect',
-        'report the detected stack without writing anything.'
-      ),
+      ('agents detect', 'report the detected stack without writing anything.'),
       (
         'agents sync',
         're-apply the rules after the stack, pubspec, or rules changed. This is how a project picks up a newer CLI.'
@@ -259,10 +256,7 @@ const List<(String, List<(String, String)>)> _usageGroups = [
         'agents doctor [--fix]',
         'check the installation for drift and repair it.'
       ),
-      (
-        'agents status',
-        'show what is installed and which files drifted.'
-      ),
+      ('agents status', 'show what is installed and which files drifted.'),
       (
         'agents uninstall [--dry-run] [--force]',
         'remove everything this CLI manages. User-owned files (docs/project/, custom rules) are never removed, even with --force.'
@@ -276,14 +270,8 @@ const List<(String, List<(String, String)>)> _usageGroups = [
         'agents add <kind> <profile>',
         'switch one concern to a profile, e.g. state to riverpod. Preview the result with agents explain first.'
       ),
-      (
-        'agents remove <kind>',
-        'drop a concern back to the CLI default.'
-      ),
-      (
-        'agents explain <concern>',
-        'show which rule files load for a concern.'
-      ),
+      ('agents remove <kind>', 'drop a concern back to the CLI default.'),
+      ('agents explain <concern>', 'show which rule files load for a concern.'),
     ],
   ),
   (
@@ -313,14 +301,23 @@ const List<(String, List<(String, String)>)> _usageGroups = [
     [
       ('agents preset list', 'list saved presets.'),
       ('agents preset show <name>', "print one preset's full configuration."),
-      ('agents preset create [name]', 'start a new preset from the CLI defaults.'),
+      (
+        'agents preset create [name]',
+        'start a new preset from the CLI defaults.'
+      ),
       ('agents preset edit <name>', 'open the preset file in the editor.'),
-      ('agents preset set <name> <kind> [value]', 'set one stack choice in a preset.'),
+      (
+        'agents preset set <name> <kind> [value]',
+        'set one stack choice in a preset.'
+      ),
       (
         'agents preset set <name> rule <layer>',
         'pin a custom rule layer in a preset.'
       ),
-      ('agents preset unset <name> <kind>', 'clear a stack choice from a preset.'),
+      (
+        'agents preset unset <name> <kind>',
+        'clear a stack choice from a preset.'
+      ),
       ('agents preset unset <name> rule <layer>', 'clear a pinned rule layer.'),
       ('agents preset save <name> [--force]', 'persist the current preset.'),
       ('agents preset delete <name>', 'delete a saved preset.'),
@@ -353,11 +350,23 @@ const List<(String, List<(String, String)>)> _usageGroups = [
     'Custom rules:',
     [
       ('agents rule list [layer]', 'list your rule documents per layer.'),
-      ('agents rule add <layer> <file.md> [name]', 'register one of your rule documents.'),
+      (
+        'agents rule add <layer> <file.md> [name]',
+        'register one of your rule documents.'
+      ),
       ('agents rule remove <layer> <name>', 'unregister a rule document.'),
-      ('agents rule default <layer> <name|default>', 'mark a rule document as the layer default.'),
-      ('agents rule use <layer> <name|default>', 'activate a rule document for a layer.'),
-      ('agents rule show <layer> [name]', 'show the rule documents registered for a layer.'),
+      (
+        'agents rule default <layer> <name|default>',
+        'mark a rule document as the layer default.'
+      ),
+      (
+        'agents rule use <layer> <name|default>',
+        'activate a rule document for a layer.'
+      ),
+      (
+        'agents rule show <layer> [name]',
+        'show the rule documents registered for a layer.'
+      ),
     ],
   ),
   (
@@ -369,13 +378,31 @@ const List<(String, List<(String, String)>)> _usageGroups = [
       ('agents ruleset update <name>', 'pull the latest rules for a ruleset.'),
       ('agents ruleset profiles <name>', 'list the profiles a ruleset ships.'),
       ('agents ruleset map [--review]', 'match project rule docs to concerns.'),
-      ('agents ruleset apply <name> <concern...>', 'install rules for the named concerns.'),
-      ('agents ruleset link [--yes]', 'bridge an existing AGENTS.md to this CLI.'),
+      (
+        'agents ruleset apply <name> <concern...>',
+        'install rules for the named concerns.'
+      ),
+      (
+        'agents ruleset link [--yes]',
+        'bridge an existing AGENTS.md to this CLI.'
+      ),
       ('agents ruleset validate <name>', "check a ruleset's shape."),
-      ('agents ruleset diff <name>', 'compare installed rules against the ruleset.'),
-      ('agents ruleset status <name>', 'show what a ruleset has installed here.'),
-      ('agents ruleset lock / verify / restore', 'pin, verify, and restore locked rules.'),
-      ('agents ruleset audit', 'check installed rules for drift and staleness.'),
+      (
+        'agents ruleset diff <name>',
+        'compare installed rules against the ruleset.'
+      ),
+      (
+        'agents ruleset status <name>',
+        'show what a ruleset has installed here.'
+      ),
+      (
+        'agents ruleset lock / verify / restore',
+        'pin, verify, and restore locked rules.'
+      ),
+      (
+        'agents ruleset audit',
+        'check installed rules for drift and staleness.'
+      ),
       (
         'agents ruleset upgrade-plan [name]',
         'plan an upgrade or get a ruleset recommendation.'
@@ -385,8 +412,14 @@ const List<(String, List<(String, String)>)> _usageGroups = [
   (
     'Dependencies:',
     [
-      ('agents dependency plan', 'preview pubspec changes without applying them.'),
-      ('agents dependency add [package ...] [--yes]', 'add packages with the safety checks of this CLI.'),
+      (
+        'agents dependency plan',
+        'preview pubspec changes without applying them.'
+      ),
+      (
+        'agents dependency add [package ...] [--yes]',
+        'add packages with the safety checks of this CLI.'
+      ),
       ('agents dependency remove <package> [--force]', 'remove packages.'),
     ],
   ),

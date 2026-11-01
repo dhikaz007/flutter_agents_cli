@@ -1,6 +1,8 @@
 import 'dart:io';
 
+import 'package:flutter_agents_cli/src/generator.dart';
 import 'package:flutter_agents_cli/src/rule_mapper.dart';
+import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
 void main() {
@@ -186,5 +188,45 @@ void main() {
     expect(mapper.classify('docs/rules/BRAND.md', '# Brand voice'), isNull);
     expect(mapper.dynamicConcerns(root), isEmpty);
     expect(mapper.unambiguousMappings(root), isEmpty);
+  });
+
+  test('every bundled universal rule declares its own concern', () async {
+    final bundle = Directory(
+      p.join(
+        (await RuleGenerator().templateRoot()).path,
+        'rulesets',
+        'vibe-coding-rules',
+      ),
+    );
+    final rules = Directory(p.join(bundle.path, 'rules'));
+    final files = rules.listSync().whereType<File>().toList();
+    expect(files, hasLength(9),
+        reason: 'the bundled ruleset ships nine universal rules');
+
+    final mapper = RuleMapper();
+    for (final file in files) {
+      final stem = p
+          .basenameWithoutExtension(file.path)
+          .toLowerCase()
+          .replaceAll('_', '-');
+      expect(
+        mapper.declaresConcern(stem, file.path, file.readAsStringSync()),
+        isTrue,
+        reason: '$stem must classify as itself or a generator silently '
+            'skips it (generator.dart:229)',
+      );
+    }
+
+    final concerns = mapper.dynamicConcerns(bundle);
+    for (final file in files) {
+      final stem = p
+          .basenameWithoutExtension(file.path)
+          .toLowerCase()
+          .replaceAll('_', '-');
+      expect(concerns, contains(stem),
+          reason: 'dynamicConcerns must derive $stem from the filename');
+    }
+    expect(concerns, contains('pagination'),
+        reason: 'state-management carries the pagination alias');
   });
 }

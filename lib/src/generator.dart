@@ -6,7 +6,6 @@ import 'package:path/path.dart' as p;
 
 import 'manifest.dart';
 import 'models.dart';
-import 'registry.dart';
 import 'widget_store.dart';
 import 'rule_store.dart';
 import 'rule_mapper.dart';
@@ -134,37 +133,30 @@ class RuleGenerator {
       desired[rel] = entity.readAsBytesSync();
     }
 
-    // Firebase references beyond the setup guide are gated on the project
-    // actually depending on Firebase. The setup guide always installs: it is
-    // what walks an agent through adding those dependencies, so it cannot wait
-    // for them. Every apply() re-reads pubspec, which makes `agents sync`
-    // both install and retire the gated references.
-    if (!_hasFirebaseDependencies(project)) {
-      const gated = <String>[
-        'docs/rules/references/firebase-firestore.md',
-        'docs/rules/references/firebase-auth.md',
-        'docs/rules/references/firebase-observability.md',
-      ];
-      for (final rel in gated) {
-        desired.remove(rel);
+    // The ruleset installs the same concerns under docs/dynamic-rules/rules/,
+    // so a project keeps exactly one copy of each rule.
+    if (config.ruleset != null) {
+      desired.removeWhere((rel, _) => rel.startsWith('docs/rules/'));
+    }
+
+    // Conventions skeleton ships with the bundled ruleset. The generator never
+    // seeds a second copy: an observed file already in the project is preserved
+    // as user-owned, exactly like any other unmanaged document.
+    if (config.ruleset != null) {
+      final conventions = File(p.join(
+        templates.path,
+        'rulesets',
+        'vibe-coding-rules',
+        'templates',
+        'PROJECT-CONVENTIONS.md',
+      ));
+      if (conventions.existsSync()) {
+        desired['docs/dynamic-rules/PROJECT-CONVENTIONS.md'] =
+            conventions.readAsBytesSync();
       }
     }
 
     desired['docs/PROJECT-STACK.md'] = utf8.encode(_projectStack(config));
-
-    // Dynamic rulesets keep every profile under docs/dynamic-rules/ only.
-    if (config.ruleset == null) {
-      for (final key in config.profileKeys) {
-        final parts = key.split(':');
-        final rel = ProfileRegistry.profilePath(
-          parts.first,
-          parts.sublist(1).join(':'),
-        );
-        final source =
-            File(p.join(templates.path, rel.substring('docs/'.length)));
-        if (source.existsSync()) desired[rel] = source.readAsBytesSync();
-      }
-    }
 
     final widgetTemplates = Directory(p.join(templates.path, 'widgets'));
     if (widgetTemplates.existsSync()) {
@@ -263,20 +255,6 @@ class RuleGenerator {
     desired['docs/RULES-MAP.md'] = utf8.encode(_rulesMap(config));
     return desired;
   }
-
-  /// True when pubspec.yaml depends on Firebase. firebase_options.dart is not
-  /// consulted on purpose: it only exists after setup ran, and the setup guide
-  /// is exactly what must be present before that.
-  bool _hasFirebaseDependencies(Directory project) {
-    final file = File(p.join(project.path, 'pubspec.yaml'));
-    if (!file.existsSync()) return false;
-    return _firebaseDependency.hasMatch(file.readAsStringSync());
-  }
-
-  static final RegExp _firebaseDependency = RegExp(
-    r'^\s*(firebase_\w+|cloud_firestore|flutterfire_cli):',
-    multiLine: true,
-  );
 
   void _discoverProjectRules(Directory project, StackConfig config) {
     final discovered = RuleMapper().unambiguousMappings(project);
@@ -422,8 +400,7 @@ class RuleGenerator {
 
   void _deleteEmptyManagedDirectories(Directory project) {
     final candidates = <String>[
-      for (final folder in ProfileRegistry.profileFolders)
-        p.join('docs', 'profiles', folder),
+      // Legacy per-concern profile trees, gone since profiles became stack-only.
       p.join('docs', 'profiles'),
       p.join('docs', 'custom-rules'),
       // The Claude Code hook retired in 2.10.0 leaves tool/hooks behind on

@@ -32,10 +32,13 @@ void main() {
       .where((file) => p.extension(file.path).toLowerCase() == '.md')
       .toList();
 
-  test('every rule and profile file stays under the per-file budget', () {
+  test('every bundled rule and profile file stays under the per-file budget',
+      () {
     final files = <File>[
       ...markdownUnder(Directory(p.join(base.path, 'docs', 'rules'))),
-      ...markdownUnder(Directory(p.join(templates.path, 'profiles'))),
+      ...markdownUnder(Directory(
+        p.join(templates.path, 'rulesets', 'vibe-coding-rules'),
+      )),
     ];
     expect(files, isNotEmpty, reason: 'no rule or profile templates found');
 

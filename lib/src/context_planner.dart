@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:path/path.dart' as p;
 
 import 'models.dart';
-import 'registry.dart';
 
 class ContextPlan {
   ContextPlan(this.concerns, this.files, this.warnings, this.estimatedTokens);
@@ -301,89 +300,14 @@ class ContextPlanner {
     if (needsStack) addIfExists('docs/PROJECT-STACK.md');
     if (concerns.contains('workflow')) {
       addIfExists('docs/ARCHITECTURE-ESSENTIAL.md');
-      if (config.architecture != null) {
-        addIfExists(
-          ProfileRegistry.profilePath('architecture', config.architecture!),
-        );
-      }
     }
 
     if (concerns.contains('ui')) addIfExists('docs/rules/UI.md');
     if (concerns.contains('security')) addIfExists('docs/rules/SECURITY.md');
     if (concerns.contains('testing')) addIfExists('docs/rules/TESTING.md');
     if (concerns.contains('codegen')) addIfExists('docs/rules/CODEGEN.md');
-    if (concerns.contains('style')) addIfExists('docs/rules/STYLE.md');
-    if (concerns.contains('commit')) addIfExists('docs/rules/COMMIT.md');
     if (concerns.contains('workflow')) addIfExists('docs/rules/WORKFLOW.md');
-    if (concerns.contains('performance'))
-      addIfExists('docs/rules/PERFORMANCE.md');
-    if (concerns.contains('accessibility')) {
-      addIfExists('docs/rules/ACCESSIBILITY.md');
-    }
-    if (concerns.contains('errors')) addIfExists('docs/rules/ERRORS.md');
-    if (concerns.contains('dart3')) addIfExists('docs/rules/DART3.md');
-    if (concerns.contains('firebase')) addIfExists('docs/rules/FIREBASE.md');
-    if (concerns.contains('storage') && config.storage != null) {
-      addIfExists(ProfileRegistry.profilePath('storage', config.storage!));
-    }
-    if (concerns.contains('localization') && config.localization != null) {
-      addIfExists(
-        ProfileRegistry.profilePath('localization', config.localization!),
-      );
-    }
-    if (concerns.contains('assets') && config.assets != null) {
-      addIfExists(ProfileRegistry.profilePath('assets', config.assets!));
-    }
-
-    // A loading profile is a role, not a companion of the state concern: only
-    // the role the task names is relevant, and naming it is the whole signal.
-    void addLoading(String kind, String? value) {
-      if (value != null) addIfExists(ProfileRegistry.profilePath(kind, value));
-    }
-
-    if (any(<String>['shimmer', 'inline placeholder', 'text placeholder'])) {
-      addLoading('loading-inline', config.inlineLoader);
-    }
-    if (any(<String>['skeleton', 'list placeholder', 'card placeholder'])) {
-      addLoading('loading-list', config.listLoader);
-    }
-    if (any(<String>[
-      'loader overlay',
-      'blocking loader',
-      'blocking overlay',
-      'progress overlay',
-    ])) {
-      addLoading('loading-blocking', config.blockingLoader);
-    }
-
-    if (concerns.contains('state') && config.state != null) {
-      addIfExists(ProfileRegistry.profilePath('state', config.state!));
-      if (config.pagination != null &&
-          any(<String>['pagination', 'next page', 'paging'])) {
-        addIfExists(
-          ProfileRegistry.profilePath('pagination', config.pagination!),
-        );
-      }
-    }
-    if (concerns.contains('routing') && config.routing != null) {
-      addIfExists(ProfileRegistry.profilePath('routing', config.routing!));
-    }
-    if (concerns.contains('di') && config.di != null) {
-      addIfExists(ProfileRegistry.profilePath('di', config.di!));
-    }
-    if (concerns.contains('codegen')) {
-      if (config.modelCodegen != null) {
-        addIfExists(
-            ProfileRegistry.profilePath('codegen', config.modelCodegen!));
-      }
-      if (config.jsonCodegen != null) {
-        addIfExists(
-          ProfileRegistry.profilePath('json-codegen', config.jsonCodegen!),
-        );
-      }
-    }
-    if (concerns.contains('network') && config.network != null) {
-      addIfExists(ProfileRegistry.profilePath('network', config.network!));
+    if (concerns.contains('network')) {
       final endpointLayer = File(
         p.join(root.path, 'docs', 'api', 'ENDPOINT-LAYER.md'),
       );

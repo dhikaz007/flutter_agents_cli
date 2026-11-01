@@ -1,5 +1,15 @@
 # Changelog
 
+## 3.0.0
+
+Breaking: the built-in presets `cubit-clean`, `modular-cubit`, and `riverpod-clean` are gone, and a ruleset project no longer receives `docs/rules/` or `docs/profiles/`.
+
+- Bundle `vibe-coding-rules` inside the package instead of downloading it: `agents init` seeds the cache from `templates/rulesets/vibe-coding-rules/` with no git and no network, and `ruleset update`/`diff` refuse a bundled ruleset with a message to update the CLI package. External rulesets added with `agents ruleset add` keep the git path. The bundled revision is recorded in the cache `.bundled` marker from the bundle README's source commit.
+- Replace the built-in presets `cubit-clean`, `modular-cubit`, and `riverpod-clean` with the four profiles the ruleset ships: `go_router_get_it`, `flutter_modular_v5`, `flutter_modular_v6`, `flutter_modular_v7`. A preset name is also a profile name, so `agents init --yes --preset flutter_modular_v6` selects the profile without prompting and installs the target layout: `PROJECT_PROFILE.md`, nine universal rules under `docs/dynamic-rules/rules/`, four profile documents, and `PROJECT-CONVENTIONS.md`.
+- Make profiles stack-only: delete `templates/profiles/` and the per-concern document machinery (`ProfileRegistry.profilePath`, `profileFolders`, `folderForKind`, the `docs/profiles` install and context-planning rows, the doctor's per-concern file check). The `state`, `network`, `storage` and other kinds stay in the registry for dependency installation only. Projects with a ruleset no longer receive `docs/rules/`; the ruleset copy is the only one.
+- Replace the twelve bundled base rules with the nine from `vibe_coding_rules_dynamic` (CORE, UI, STATE-MANAGEMENT, NETWORK, SECURITY, TESTING, CODEGEN, ENVIRONMENT, WORKFLOW) and route `templates/base/AGENTS.md` through them. Remove `COMMIT.md`, `STYLE.md`, `PERFORMANCE.md`, `ACCESSIBILITY.md`, `ERRORS.md`, `DART3.md`, `FIREBASE.md`, and the gated `docs/rules/references/` folder together with its pubspec gate.
+- Install `docs/dynamic-rules/PROJECT-CONVENTIONS.md` from the bundle on first ruleset use; an observed file already in the project stays user-owned and is never reseeded.
+
 ## 2.14.1
 
 - Validate the rule layer in `agents rule use`, `agents rule default`, and `agents rule show`, so a typo such as `stat` no longer silently records `bogus-layer: CLI default` into the manifest and `docs/PROJECT-STACK.md`. An unknown layer exits 64 with the installed layer list, or a hint to create the first layer folder when none exist.

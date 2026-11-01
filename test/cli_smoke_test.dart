@@ -83,7 +83,8 @@ void main() {
       final result = runCli(['--help']);
 
       expect(result.stdout, contains('# state management:'));
-      expect(result.stdout, contains('# inline spinners for buttons and rows.'));
+      expect(
+          result.stdout, contains('# inline spinners for buttons and rows.'));
     });
   });
 

@@ -1,0 +1,13 @@
+architecture: feature_first_pragmatic_clean
+routing: go_router
+di: injectable_get_it
+dependencies:
+  go_router: any
+  get_it: any
+  injectable: any
+dev_dependencies:
+  build_runner: any
+  go_router_builder: any
+  injectable_generator: any
+sdk_constraints:
+  dart: '>=3.3.0 <4.0.0'

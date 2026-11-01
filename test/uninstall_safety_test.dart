@@ -22,8 +22,7 @@ void main() {
     return project;
   }
 
-  test('a user-owned project rule is never tracked by the manifest',
-      () async {
+  test('a user-owned project rule is never tracked by the manifest', () async {
     final project = await apply(
       Directory.systemTemp.createTempSync('agents-uninstall-'),
     );

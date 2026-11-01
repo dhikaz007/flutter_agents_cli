@@ -1,12 +1,47 @@
-# Security Rule
+# Security
 
-Load for auth/tokens/secrets/sensitive storage/mutations/TLS/telemetry.
+Load for auth/tokens/secrets/sensitive storage/mutations/TLS/telemetry or security-sensitive behavior.
 
-- Never hardcode or log secrets, passwords, tokens, credentials, signing keys, or sensitive headers/payloads. Report presence and length instead of value.
-- `.opencode/plugins/protect-token.js` warns - never blocks - when a Bash call prints a secret, dumps the environment, uses `curl -v`, passes a secret on the command line, in a body, or in a URL, greps or network-copies a secrets file, or when a file tool reads or writes credentials, keys, or a real `.env`. The rule itself is this document; the plugin only makes a leak-prone call visible. A recursive search over a directory or an interpreter still reaches a secrets file by design. Treat a plugin warning as a rule violation: fix the command. On another agent, the same rule still applies without the harness check.
-- Server-side authorization remains authoritative; hidden UI or route guards are not security boundaries.
-- Use the project's approved secure-storage/config mechanism; do not invent one when requirements are missing.
-- Mutations require duplicate-submit protection and the project's documented idempotency/mutation-safety convention.
-- Never silently queue offline mutations without an explicit product rule.
-- Debug/network/crash tooling must redact sensitive values.
-- Do not add security-impacting dependencies when existing infrastructure already solves the requirement.
+## Project security contract
+
+Fill these from product/API requirements; do not invent them:
+
+- TEMPLATE-PROJECT authorization ownership (server-enforced; hidden UI is never an authorization control)
+- mutation safety/idempotency convention
+- auth scheme and token audience
+- sensitive local-storage/cache policy
+- offline mutation policy
+- push notification data policy
+- sensitive document/screenshot/download/share policy
+- transport security/pinning policy
+- telemetry/crash-reporting policy
+- API security conventions and scope boundaries
+
+## Universal implementation rules
+
+- Never hardcode secrets, passwords, service credentials, signing secrets, or encryption master keys.
+- Public/client keys may exist only when provider docs explicitly classify them as public and restrictions are appropriate.
+- Environment config lives in `.env`/platform config and is accessed through centralized `AppConfig`; features/screens do not access raw env maps.
+- `.env` is gitignored; `.env.example` contains placeholders only.
+- Tokens/refresh tokens/sensitive credentials use OS secure storage as required by project policy.
+- Never log Authorization headers, Bearer/refresh tokens, passwords, credentials, or secure-storage values.
+- Dio/debug/crash logging must redact sensitive values and avoid sensitive payloads.
+- Authorization is enforced by server; client visibility checks are UX only.
+- Mutations require duplicate-submit protection plus the project idempotency/mutation-safety convention.
+- Offline mutation behavior must follow the documented policy; never silently queue actions without an explicit requirement.
+- Obfuscation is not encryption and must never be treated as secret storage.
+- Before adding dependencies, check existing capabilities, maintenance/reputation, permissions, and security impact; avoid blind mass upgrades.
+
+## Build hardening
+
+TEMPLATE-PROJECT: release command and symbol retention policy, e.g.:
+
+```bash
+flutter build appbundle --obfuscate --split-debug-info=build/symbols
+```
+
+Keep symbols securely for crash de-obfuscation.
+
+## Scope boundaries
+
+TEMPLATE-PROJECT: list capabilities this client must not implement (for example authoring/admin/offline action queues/OCR/AI assistance).

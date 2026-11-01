@@ -98,17 +98,10 @@ Future<void> runInit(Directory root, ArgResults command) async {
           choose('Rule source', <String>['dynamic', 'template', 'skip'],
               detected: 'dynamic', allowNone: false);
       if (source == 'dynamic') {
-        final rulesetName = command['ruleset'] as String? ?? defaultRulesetName;
-        final rulesetStore = RulesetStore();
-        await _ensureDefaultRuleset(rulesetStore, rulesetName);
-        final profile = command['profile'] as String? ??
-            _ensureAndChooseRulesetProfile(rulesetStore, rulesetName);
-        config.ruleset = rulesetName;
-        config.rulesetProfile = profile;
-        config.dynamicRules = RuleMapper()
-            .dynamicConcerns(rulesetStore.directory(rulesetName))
-            .toList();
+        await _applyDynamicRuleset(command, config, allowPrompt: true);
       }
+    } else {
+      await _applyDynamicRulesetQuietly(command, config);
     }
   } else {
     // Existing projects are scan-first: detected conventions and mapped
@@ -171,14 +164,71 @@ Future<void> runInit(Directory root, ArgResults command) async {
   }
 }
 
+/// Installs the dynamic ruleset onto [config]: seeds the ruleset, resolves a
+/// profile, and derives the concern list from its `rules/*.md` filenames.
+///
+/// Resolution order for the profile: `--profile`, then a preset whose name is
+/// one of the ruleset's profiles, then a prompt when [allowPrompt] is set.
+Future<void> _applyDynamicRuleset(
+  ArgResults command,
+  StackConfig config, {
+  required bool allowPrompt,
+}) async {
+  final rulesetName = command['ruleset'] as String? ?? defaultRulesetName;
+  final store = RulesetStore();
+  await _ensureDefaultRuleset(store, rulesetName);
+  final preset = command['preset'] as String?;
+  final profiles = store.profiles(rulesetName);
+  final profile = command['profile'] as String? ??
+      (preset != null && profiles.contains(preset) ? preset : null) ??
+      (allowPrompt ? _ensureAndChooseRulesetProfile(store, rulesetName) : null);
+  if (profile == null) {
+    throw StateError('No ruleset profile for $rulesetName. Pass --profile '
+        '<${profiles.join(', ')}> or a preset that names one.');
+  }
+  config.ruleset = rulesetName;
+  config.rulesetProfile = profile;
+  config.dynamicRules =
+      RuleMapper().dynamicConcerns(store.directory(rulesetName)).toList();
+}
+
+/// The scripted (`--yes`) counterpart: same install when a profile is known
+/// without prompting, otherwise the template rules apply. An explicit
+/// `--rule-source dynamic` or `--profile` must still fail loudly, because the
+/// caller asked for dynamic rules and did not supply enough to select one.
+Future<void> _applyDynamicRulesetQuietly(
+  ArgResults command,
+  StackConfig config,
+) async {
+  final explicit = command['rule-source'] as String?;
+  if (explicit == 'skip' || explicit == 'template') return;
+  final hasProfileHint =
+      command['profile'] != null || command['preset'] != null;
+  if (command['ruleset'] != null && !hasProfileHint && explicit == null) {
+    return;
+  }
+  try {
+    await _applyDynamicRuleset(command, config, allowPrompt: false);
+  } on StateError catch (error) {
+    if (explicit == 'dynamic') rethrow;
+    stdout.writeln('${error.message}. Installing template rules instead.');
+  }
+}
+
 Future<void> _ensureDefaultRuleset(RulesetStore store, String name) async {
   if (store.list().contains(name)) return;
   if (name != defaultRulesetName) {
     throw StateError(
         'Ruleset $name is not cached. Add it with `agents ruleset add`.');
   }
-  stdout.writeln('Downloading official Dynamic Rules: $defaultRulesetName');
-  await store.add(name, defaultRulesetUrl);
+  stdout.writeln('Using bundled rules: $defaultRulesetName');
+  final seeded = await store.tryEnsureBundled(
+    name,
+    await RuleGenerator().templateRoot(),
+  );
+  if (!seeded) {
+    throw StateError('Bundled ruleset $name is missing from the CLI package.');
+  }
 }
 
 String _ensureAndChooseRulesetProfile(RulesetStore store, String name) {
@@ -348,15 +398,14 @@ Future<void> runDoctor(Directory root, {bool fix = false}) async {
     }
   }
 
-  // Dynamic rulesets document their profile under docs/dynamic-rules; only
-  // template stacks use docs/profiles. Only one of the two applies.
+  // Dynamic rulesets document their profile under docs/dynamic-rules. Template
+  // mode has no profile documents left since profiles became stack-only, so the
+  // only thing worth checking there is the package stack choice.
   final rulesetProfile = manifest.config.rulesetProfile;
   if (manifest.config.ruleset != null && rulesetProfile != null) {
     errors += _checkDynamicProfile(root, rulesetProfile);
   } else {
-    final found = _checkTemplateProfiles(root, manifest.config, detection);
-    errors += found.errors;
-    warnings += found.warnings;
+    warnings += _checkStackPackages(manifest.config, detection).warnings;
   }
 
   final projectRules = File(
@@ -385,14 +434,14 @@ int _checkDynamicProfile(Directory root, String profile) {
   return 1;
 }
 
-/// Verifies every active template profile file exists, and that an existing
-/// project actually declares the package each profile expects.
-({int errors, int warnings}) _checkTemplateProfiles(
-  Directory root,
+/// Warns when an existing project declares a stack choice whose package is
+/// absent from pubspec.yaml. Per-concern profile documents no longer exist
+/// since profiles became stack-only; the dynamic profile directory is verified
+/// by [_checkDynamicProfile].
+({int errors, int warnings}) _checkStackPackages(
   StackConfig config,
   DetectionResult detection,
 ) {
-  var errors = 0;
   var warnings = 0;
   for (final key in config.profileKeys) {
     final parts = key.split(':');
@@ -412,17 +461,8 @@ int _checkDynamicProfile(Directory root, String profile) {
         warnings++;
       }
     }
-    final profile = File(
-      p.join(root.path, ProfileRegistry.profilePath(packageRuleKind, value)),
-    );
-    if (!profile.existsSync()) {
-      stdout.writeln(
-        '✗ active profile missing: ${p.relative(profile.path, from: root.path)}',
-      );
-      errors++;
-    }
   }
-  return (errors: errors, warnings: warnings);
+  return (errors: 0, warnings: warnings);
 }
 
 String _configKindForProfile(String profileKind, String value) {
@@ -546,5 +586,3 @@ void runDetect(Directory root) {
 }
 
 const String defaultRulesetName = 'vibe-coding-rules';
-const String defaultRulesetUrl =
-    'https://github.com/dhikaz007/vibe_coding_rules_dynamic.git';

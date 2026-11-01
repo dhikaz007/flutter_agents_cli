@@ -1,4 +1,4 @@
-# flutter-agents CLI v2.14.1
+# flutter-agents CLI v3.1.0
 
 [![CI](https://github.com/dhikaz007/flutter_agents_cli/actions/workflows/ci.yml/badge.svg)](https://github.com/dhikaz007/flutter_agents_cli/actions/workflows/ci.yml)
 [![Release](https://github.com/dhikaz007/flutter_agents_cli/actions/workflows/release.yml/badge.svg)](https://github.com/dhikaz007/flutter_agents_cli/actions/workflows/release.yml)
@@ -779,6 +779,38 @@ backup under `.flutter-agents-backup/`; the CLI never guesses folder moves.
 ```
 
 This command only reports observed v5/v6/v7 APIs and a manual review checklist. It never edits source files or `pubspec.yaml`.
+
+### Feature folder scaffold (v3.1)
+
+Scaffold or refactor the modular feature layout (`data`, `presentation`, `config`)
+for a ruleset profile:
+
+```bash
+agents migrate feature --profile flutter_modular_v6 --dry-run
+agents migrate feature --profile flutter_modular_v6 --apply --example home
+agents migrate feature --profile flutter_modular_v7 --apply
+```
+
+`--profile` accepts `flutter_modular_v6` or `flutter_modular_v7` (the profile the
+project uses via `agents ruleset use`). Without `--apply` the command only reports
+missing groups and planned moves.
+
+`--apply`:
+
+- scaffolds `lib/feature/<example>/` with the profile's template (freezed model
+  and state with committed generated parts, cubit, screen, and the `config/`
+  wiring: v6 `bind_modules` + `modules`, v7 a single `createModule` module);
+- moves files inside `lib/feature/**` whose names match feature suffixes
+  (`*_cubit`, `*_model`, `*_repo`, `*_modules`, `*_page`, …) into their group,
+  carrying `.freezed.dart` / `.g.dart` part files along;
+- rewrites broken `import` / `export` URIs, never `part` directives;
+- writes the profile's `FOLDER-STRUCTURE.md` to
+  `docs/dynamic-rules/profiles/<profile>/`, so agents read the structure from the
+  rules;
+- creates a backup under `.flutter-agents-backup/` and finishes with
+  `dart analyze`. Pass `--force` to accept a failing analyze pass.
+
+Files outside `lib/feature/` are never touched.
 
 ## Existing project safe adoption
 

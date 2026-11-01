@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Add `agents migrate feature --profile flutter_modular_v6|_v7`: scaffolds the modular feature layout (`data`, `presentation`, `config`) with freezed model/state (committed generated parts), moves misplaced files inside `lib/feature/**` with backup and import rewrite, and writes the profile's `FOLDER-STRUCTURE.md` into `docs/dynamic-rules/profiles/<profile>/`. v6 wires `bind_modules` + `modules` (`Module`/`exportedBinds`), v7 a single feature-scoped `createModule`.
+- Rewrite the `flutter_modular_v6` / `flutter_modular_v7` `FOLDER-STRUCTURE.md` rules to the new feature tree (no `domain/`, concrete repos, freezed state, route constants in `config/routes`) and extend both profiles with `flutter_bloc` and freezed dependencies.
+
 ## 3.0.0
 
 Breaking: the built-in presets `cubit-clean`, `modular-cubit`, and `riverpod-clean` are gone, and a ruleset project no longer receives `docs/rules/` or `docs/profiles/`.

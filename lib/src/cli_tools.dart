@@ -5,13 +5,19 @@ import 'package:path/path.dart' as p;
 import 'package:args/args.dart';
 
 import 'dependency_manager.dart';
+import 'folder_scaffolder.dart';
+import 'import_rewriter.dart';
 import 'manifest.dart';
 import 'migration_planner.dart';
 import 'prompts.dart';
 import 'style_auditor.dart';
 
-void runMigrate(Directory root, ArgResults command) {
+Future<void> runMigrate(Directory root, ArgResults command) async {
   final sub = command.command;
+  if (sub?.name == 'feature') {
+    await _runMigrateFeature(root, sub!);
+    return;
+  }
   if (sub?.name == 'structure') {
     if (sub!.rest.length != 2 ||
         (sub['dry-run'] != true && sub['apply'] != true)) {
@@ -127,6 +133,96 @@ Future<void> runDependency(Directory root, ArgResults command) async {
     return;
   }
   throw ArgumentError('Usage: agents dependency <plan|add|remove>');
+}
+
+Future<void> _runMigrateFeature(Directory root, ArgResults sub) async {
+  final profile = (sub['profile'] as String?)?.trim();
+  if (profile == null || profile.isEmpty) {
+    throw ArgumentError(
+        'Usage: agents migrate feature --profile <flutter_modular_v6|flutter_modular_v7> '
+        '[--dry-run|--apply] [--example <name>] [--force]');
+  }
+  final example = ((sub['example'] as String?)?.trim().isNotEmpty ?? false)
+      ? (sub['example'] as String).trim()
+      : 'home';
+  final apply = sub['apply'] == true;
+  final scaffolder = FolderScaffolder();
+  final planner = MigrationPlanner();
+
+  if (!apply) {
+    stdout.writeln(scaffolder.report(root));
+    final planned = await scaffolder.scaffold(
+      root,
+      profile: profile,
+      exampleFeature: example,
+      dryRun: true,
+    );
+    stdout.writeln('\n## Scaffold plan ($example)');
+    if (planned.isEmpty) {
+      stdout.writeln('- Nothing to write.');
+    } else {
+      for (final path in planned) {
+        stdout.writeln('- CREATE $path');
+      }
+    }
+    final moves = planner.planFeatureMoves(root);
+    stdout.writeln('\n## Move plan');
+    if (moves.isEmpty) {
+      stdout.writeln('- Nothing to move.');
+    } else {
+      for (final move in moves) {
+        stdout.writeln('- MOVE $move');
+      }
+    }
+    return;
+  }
+
+  if (!confirm('Scaffold $example, move feature files, and create a backup?',
+      defaultYes: false)) {
+    return;
+  }
+
+  final plan = planner.planFeatureMoves(root);
+  final applied = planner.applyFeatureMoves(root, plan);
+  final rewritten = ImportRewriter().rewriteImports(root, <String, String>{
+    for (final move in applied) move.from: move.to,
+  });
+  final written = await scaffolder.scaffold(
+    root,
+    profile: profile,
+    exampleFeature: example,
+  );
+
+  stdout.writeln('CREATE ${written.length}');
+  for (final path in written) {
+    stdout.writeln('- $path');
+  }
+  stdout.writeln('MOVE ${applied.length}');
+  for (final move in applied) {
+    stdout.writeln('- $move');
+  }
+  stdout.writeln('IMPORT $rewritten file(s) rewritten');
+  if (written.isEmpty && applied.isEmpty && rewritten == 0) {
+    stdout.writeln('Nothing to do.');
+  }
+
+  final analyze = await Process.run('dart', <String>['analyze'],
+      workingDirectory: root.path);
+  if (analyze.exitCode == 0) {
+    stdout.writeln('dart analyze: clean');
+    return;
+  }
+  stdout.write(analyze.stdout);
+  stderr.write(analyze.stderr);
+  if (sub['force'] == true) {
+    stdout.writeln(
+        'dart analyze reported problems; kept going because --force was set. '
+        'Backup: .flutter-agents-backup/');
+    return;
+  }
+  throw StateError(
+      'dart analyze reported problems after migration. Fix them, or re-run '
+      'with --force to accept. Backup: .flutter-agents-backup/');
 }
 
 void runStyle(Directory root, ArgResults command) {

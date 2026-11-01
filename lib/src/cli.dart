@@ -87,7 +87,7 @@ Future<void> runAgents(List<String> arguments) async {
         await runDependency(root, command);
         return;
       case 'migrate':
-        runMigrate(root, command);
+        await runMigrate(root, command);
         return;
       case 'version':
         stdout.writeln('flutter-agents $cliVersion');
@@ -219,6 +219,14 @@ ArgParser _buildParser() {
     ..addFlag('force', negatable: false);
 
   final migrate = parser.addCommand('migrate');
+  migrate.addCommand('feature')
+    ..addOption('profile',
+        help: 'Ruleset profile: flutter_modular_v6 or flutter_modular_v7.')
+    ..addFlag('dry-run', negatable: false)
+    ..addFlag('apply', negatable: false)
+    ..addOption('example',
+        help: 'Example feature name to scaffold (default: home).')
+    ..addFlag('force', negatable: false);
   migrate.addCommand('modular')
     ..addFlag('dry-run', negatable: false)
     ..addOption('output', help: 'Write the Markdown report to this path.');

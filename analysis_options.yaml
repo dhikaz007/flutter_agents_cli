@@ -22,6 +22,9 @@
 analyzer:
   exclude:
     - templates/widgets/**
+    # Scaffold payloads copied verbatim into target projects; their imports
+    # resolve in the target, not here.
+    - templates/rulesets/**
 
 # For more information about the core and recommended set of lints, see
 # https://dart.dev/go/core-lints

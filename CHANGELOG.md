@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.2.0
 
 - `agents sync` adapts the installed `network` rule to the project's real code: a probe reads `pubspec.yaml` and `lib/` (network packages, `*Interceptor`/`*ApiClient`/`*ApiService`/`ConnectivityService` classes, `idempotency` evidence), fills the rule's `TEMPLATE-PROJECT:` markers with detected facts or an explicit "decide manually" note, and appends a generated `Project reality` section. Projects without network code get the rule byte-identical to the bundle.
 

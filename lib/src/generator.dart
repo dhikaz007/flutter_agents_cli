@@ -4,6 +4,8 @@ import 'dart:isolate';
 
 import 'package:path/path.dart' as p;
 
+import 'codegen_adaptation.dart';
+import 'codegen_probe.dart';
 import 'manifest.dart';
 import 'models.dart';
 import 'network_adaptation.dart';
@@ -240,6 +242,12 @@ class RuleGenerator {
             dynamicBytes = utf8.encode(NetworkAdaptation.apply(
               String.fromCharCodes(dynamicBytes),
               NetworkProbe.detect(project),
+            ));
+          }
+          if (concern == 'codegen') {
+            dynamicBytes = utf8.encode(CodegenAdaptation.apply(
+              String.fromCharCodes(dynamicBytes),
+              CodegenProbe.detect(project),
             ));
           }
           final projectMapping = config.ruleMappings[concern];

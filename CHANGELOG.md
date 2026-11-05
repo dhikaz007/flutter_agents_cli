@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Extend the installed-rule adaptation to the `codegen` concern: a probe reads `pubspec.yaml`, `lib/main.dart` (startup order by call position inside `main()`), annotations (`@freezed`, `@JsonSerializable`, `@MappableClass`, `@RestApi`), and localization artifacts, then fills both `TEMPLATE-PROJECT:` markers and appends the generated `Project reality` section. Projects without codegen evidence get the rule byte-identical to the bundle.
+
 ## 3.2.0
 
 - `agents sync` adapts the installed `network` rule to the project's real code: a probe reads `pubspec.yaml` and `lib/` (network packages, `*Interceptor`/`*ApiClient`/`*ApiService`/`ConnectivityService` classes, `idempotency` evidence), fills the rule's `TEMPLATE-PROJECT:` markers with detected facts or an explicit "decide manually" note, and appends a generated `Project reality` section. Projects without network code get the rule byte-identical to the bundle.

@@ -35,7 +35,7 @@ void main() {
   test('every bundled rule and profile file stays under the per-file budget',
       () {
     final files = <File>[
-      ...markdownUnder(Directory(p.join(base.path, 'docs', 'rules'))),
+      ...markdownUnder(Directory(p.join(base.path, 'docs'))),
       ...markdownUnder(Directory(
         p.join(templates.path, 'rulesets', 'vibe-coding-rules'),
       )),
@@ -79,8 +79,10 @@ void main() {
         .allMatches(router)) {
       final rel = match.group(0)!;
       if (rel.contains('*')) continue;
-// Rule templates live under templates/base/<rel>; profiles live under
-      // templates/<rel> with the docs/ prefix stripped, as the generator does.
+// Base documents live under templates/base/<rel>; profile documents live
+      // under templates/<rel> with the docs/ prefix stripped, as the generator
+      // does. Universal rules come from the bundled ruleset, which the router
+      // names by concern, never file by file.
       final inBase = File(p.join(base.path, rel)).existsSync();
       final segments = rel.split('/')..removeAt(0);
       final inProfiles =

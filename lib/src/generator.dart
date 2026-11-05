@@ -133,10 +133,23 @@ class RuleGenerator {
       desired[rel] = entity.readAsBytesSync();
     }
 
-    // The ruleset installs the same concerns under docs/dynamic-rules/rules/,
-    // so a project keeps exactly one copy of each rule.
-    if (config.ruleset != null) {
-      desired.removeWhere((rel, _) => rel.startsWith('docs/rules/'));
+    // Projects that never adopted a ruleset still install universal rules
+    // under docs/rules/. Source them from the bundled ruleset so the template
+    // folder keeps exactly one copy of each rule document.
+    if (config.ruleset == null) {
+      final bundledRules = Directory(
+        p.join(templates.path, 'rulesets', 'vibe-coding-rules', 'rules'),
+      );
+      if (bundledRules.existsSync()) {
+        for (final entity in bundledRules.listSync()) {
+          if (entity is! File ||
+              p.extension(entity.path).toLowerCase() != '.md') {
+            continue;
+          }
+          desired['docs/rules/${p.basename(entity.path)}'] =
+              entity.readAsBytesSync();
+        }
+      }
     }
 
     // Conventions skeleton ships with the bundled ruleset. The generator never

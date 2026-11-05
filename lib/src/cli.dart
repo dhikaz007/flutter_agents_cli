@@ -435,6 +435,10 @@ const List<(String, List<(String, String)>)> _usageGroups = [
     'Migration planning:',
     [
       (
+        'agents migrate feature --profile <name>',
+        'scaffold and refactor a feature folder layout.'
+      ),
+      (
         'agents migrate modular <from> <to>',
         'plan a modular architecture migration.'
       ),

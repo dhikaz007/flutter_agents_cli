@@ -617,6 +617,8 @@ agents ruleset use vibe-coding-rules go_router_get_it
 
 For Flutter Modular projects, choose the matching `flutter_modular_v5`, `flutter_modular_v6`, or `flutter_modular_v7` profile. `ruleset use` writes `PROJECT_PROFILE.md`. New projects receive the selected profile under `docs/dynamic-rules/`; existing projects keep their mapped project rules unless a Dynamic Rule is explicitly selected. Do not combine profiles in one project.
 
+An installed rule can adapt to the project it lands in. The `network` rule is probed against `pubspec.yaml` and `lib/` at install time: detected `ApiClient`/`*Interceptor`/`*ApiService`/connectivity classes and idempotency evidence fill the rule's `TEMPLATE-PROJECT:` markers and are listed under a generated `Project reality` section. With no network code detected the rule installs unchanged. Regenerated on every `agents sync`.
+
 Presets remain supported. A preset can store `ruleset` and `rulesetProfile` alongside existing stack fields:
 
 ```yaml

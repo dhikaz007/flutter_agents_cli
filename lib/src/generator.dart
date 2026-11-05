@@ -6,6 +6,8 @@ import 'package:path/path.dart' as p;
 
 import 'manifest.dart';
 import 'models.dart';
+import 'network_adaptation.dart';
+import 'network_probe.dart';
 import 'widget_store.dart';
 import 'rule_store.dart';
 import 'rule_mapper.dart';
@@ -233,7 +235,13 @@ class RuleGenerator {
           }
           if (source == null) continue;
           final rel = 'docs/dynamic-rules/rules/${p.basename(source.path)}';
-          final dynamicBytes = source.readAsBytesSync();
+          var dynamicBytes = source.readAsBytesSync();
+          if (concern == 'network') {
+            dynamicBytes = utf8.encode(NetworkAdaptation.apply(
+              String.fromCharCodes(dynamicBytes),
+              NetworkProbe.detect(project),
+            ));
+          }
           final projectMapping = config.ruleMappings[concern];
           if (projectMapping?.startsWith('project:') ?? false) {
             final projectRel = projectMapping!.substring('project:'.length);

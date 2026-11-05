@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- `agents sync` adapts the installed `network` rule to the project's real code: a probe reads `pubspec.yaml` and `lib/` (network packages, `*Interceptor`/`*ApiClient`/`*ApiService`/`ConnectivityService` classes, `idempotency` evidence), fills the rule's `TEMPLATE-PROJECT:` markers with detected facts or an explicit "decide manually" note, and appends a generated `Project reality` section. Projects without network code get the rule byte-identical to the bundle.
+
 ## 3.1.0
 
 - Add `agents migrate feature --profile flutter_modular_v6|_v7`: scaffolds the modular feature layout (`data`, `presentation`, `config`) with freezed model/state (committed generated parts), moves misplaced files inside `lib/feature/**` with backup and import rewrite, and writes the profile's `FOLDER-STRUCTURE.md` into `docs/dynamic-rules/profiles/<profile>/`. v6 wires `bind_modules` + `modules` (`Module`/`exportedBinds`), v7 a single feature-scoped `createModule`.

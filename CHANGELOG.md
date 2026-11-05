@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.3.0
 
 - Extend the installed-rule adaptation to the `codegen` concern: a probe reads `pubspec.yaml`, `lib/main.dart` (startup order by call position inside `main()`), annotations (`@freezed`, `@JsonSerializable`, `@MappableClass`, `@RestApi`), and localization artifacts, then fills both `TEMPLATE-PROJECT:` markers and appends the generated `Project reality` section. Projects without codegen evidence get the rule byte-identical to the bundle.
 
